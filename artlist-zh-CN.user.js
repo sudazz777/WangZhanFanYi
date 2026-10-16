@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Artlist 简体中文助手（含歌曲界面）
+// @name         Artlist 翻译
 // @namespace    artlist-zh-cn-local
-// @version      1.0.3
+// @version      1.0.4
 // @description  翻译 Artlist 导航、音乐筛选、播放器和歌曲详情；可选在线翻译歌曲名及描述，保留英文原名。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*
@@ -800,7 +800,7 @@ Halloween|万圣节
       .body{padding:0 12px 12px}button{display:block;width:100%;margin-top:7px;padding:7px;border:1px solid #6c7077;border-radius:6px;background:#303238;color:#fff;cursor:pointer;font:inherit;text-align:left}
       button:hover{background:#44474f}p{margin:4px 0;color:#d1d5db;font-size:12px}a{color:#a7c5ff}
       @media(max-width:480px){details{width:220px}}
-    </style><details><summary>中 / EN · Artlist 中文</summary><div class="body">
+    </style><details><summary>中 / EN · Artlist 翻译</summary><div class="body">
       <p id="status" role="status"></p><button id="toggle"></button><button id="online"></button><button id="bilingual"></button>
       <button id="rescan">重新扫描 / 重试未译内容</button><button id="clear">清空在线翻译缓存</button>
       <p>在线翻译会将公开音乐文字发送至 Google；人名尽量保留原文。翻译结果仅供参考。</p>

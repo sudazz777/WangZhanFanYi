@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="下载 Artlist 简体中文助手：翻译音乐筛选、播放器和常用界面，可选歌曲名中英双语显示。支持 Tampermonkey 篡改猴。">
+  <meta name="description" content="网站翻译脚本下载目录。按网站选择中文翻译脚本，下载 ZIP 安装包，通过 Tampermonkey 篡改猴使用。">
   <meta name="color-scheme" content="light">
-  <title>Artlist 中文助手 · 脚本下载</title>
+  <title>网站翻译 · 下载目录</title>
   <style>
     :root{--ink:#172b29;--muted:#5b6e68;--green:#236c51;--line:#dce3dc;--paper:#f6f7f2;--white:#fff;--pale:#e8efdf}
     *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
@@ -20,66 +20,51 @@
     @media(max-width:600px){.wrap{width:calc(100% - 36px)}.nav{padding:20px 0}.brand{font-size:14px;gap:9px}.nav-links{gap:16px;font-size:12px}.nav-links .docs-link{display:none}.hero{grid-template-columns:1fr;gap:32px;padding:44px 0}.intro{font-size:15px}.download-card{padding:24px}.preview-caption{align-items:flex-start;flex-direction:column;gap:4px}.browser-bar span{font-size:9px}.music-app{grid-template-columns:1fr}.sidebar{display:none}.library{padding:20px}.library-head strong{font-size:15px}.track-name{font-size:12px}.guide,.details-section{grid-template-columns:1fr;gap:22px;padding:40px 0}.guide-intro{margin-bottom:0}.steps li{gap:10px}footer{flex-direction:column;gap:7px}.translation-pill{white-space:nowrap}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}}
   </style>
+  <style>
+    .hero{display:block;max-width:760px;padding:65px 0 48px}.intro{max-width:535px}
+    .section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.section-head p{margin:0;color:var(--muted);font-size:12px}
+    .catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px}.site-card{max-width:548px}.site-icon{display:grid;place-items:center;width:45px;height:45px;border-radius:12px;background:var(--pale);color:var(--green);font:700 23px Georgia,serif}
+    h3{font-size:25px;line-height:1.35;margin:0}.domain{font:12px ui-monospace,monospace;color:var(--muted);margin:5px 0 14px}.description{font-size:14px;color:var(--muted);margin:0 0 18px}.site-card .tags{margin:0 0 23px}.card-bottom{display:flex;justify-content:space-between;gap:12px;margin-top:14px;font-size:12px;color:var(--muted)}.card-bottom a{color:var(--green)}
+    .guide{margin-top:55px;border-top:1px solid var(--line);border-bottom:none;padding:50px 0 35px}
+    @media(max-width:600px){.hero{padding:42px 0}.section-head{align-items:flex-start;flex-direction:column;gap:5px}.card-bottom{flex-wrap:wrap}.guide{margin-top:38px;padding:35px 0 20px}}
+  </style>
 </head>
 <body>
   <div class="wrap">
     <header class="nav">
-      <a class="brand" href="./" aria-label="Artlist 中文助手首页"><span class="brand-icon" aria-hidden="true">译</span>Artlist 中文助手</a>
-      <nav class="nav-links" aria-label="页面导航"><a href="#install">安装指南</a><a href="./README.md" class="docs-link">完整说明 ↗</a></nav>
+      <a class="brand" href="./" aria-label="网站翻译首页"><span class="brand-icon" aria-hidden="true">译</span>网站翻译</a>
+      <nav class="nav-links" aria-label="页面导航"><a href="#catalog">下载目录</a><a href="#install">安装指南</a></nav>
     </header>
     <main>
       <section class="hero" aria-labelledby="hero-title">
-        <div>
-          <div class="eyebrow"><span class="dot" aria-hidden="true"></span>为寻找音乐的你，少一点语言障碍</div>
-          <h1 id="hero-title">让 Artlist，<br><span>说中文。</span></h1>
-          <p class="intro">从曲风筛选到歌曲播放，把常用界面变成熟悉的中文。装进篡改猴，继续发现你的下一首配乐。</p>
-          <div class="tags" aria-label="脚本功能"><span class="tag">简体中文界面</span><span class="tag">歌曲名可选双语</span><span class="tag">支持动态加载</span></div>
-        </div>
-        <div class="download-card" id="download">
-          <div class="card-top"><span class="file-icon" aria-hidden="true">ZIP</span><span class="version">v1.0.3 · .zip</span></div>
-          <h2>下载中文助手安装包</h2>
-          <p class="file-name">artlist-zh-CN-v1.0.3.zip</p>
-          <a class="button primary" href="./downloads/artlist-zh-CN-v1.0.3.zip" download="artlist-zh-CN-v1.0.3.zip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>下载 ZIP 安装包</a>
-          <p class="download-note">内含翻译脚本与安装说明。先安装 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey（篡改猴）</a>，解压后将 .user.js 文件导入扩展。</p>
+        <div class="eyebrow"><span class="dot" aria-hidden="true"></span>按网站选择你的中文翻译脚本</div>
+        <h1 id="hero-title">让常用网站，<br><span>说中文。</span></h1>
+        <p class="intro">在这里找到对应网站的翻译，下载后装进篡改猴。每个网站单独维护，新的翻译会继续加入。</p>
+      </section>
+      <section id="catalog" aria-labelledby="catalog-title">
+        <div class="section-head"><h2 id="catalog-title">下载目录</h2><p>每个安装包均包含脚本与安装说明</p></div>
+        <div class="catalog">
+          <article class="download-card site-card" aria-labelledby="artlist-title">
+            <div class="card-top"><span class="site-icon" aria-hidden="true">A</span><span class="version">v1.0.4 · ZIP</span></div>
+            <h3 id="artlist-title">Artlist 翻译</h3>
+            <p class="domain">artlist.io</p>
+            <p class="description">将导航、音乐筛选和播放器变为中文，歌曲名和描述可选在线翻译，保留英文原名。</p>
+            <div class="tags" aria-label="Artlist 翻译功能"><span class="tag">音乐素材</span><span class="tag">可选中英双语</span><span class="tag">支持动态内容</span></div>
+            <a class="button primary" href="./downloads/artlist-translation-v1.0.4.zip" download="artlist-translation-v1.0.4.zip" aria-label="下载 Artlist 翻译 ZIP 安装包"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>下载 ZIP 安装包</a>
+            <div class="card-bottom"><span>适用于桌面版篡改猴</span><a href="./artlist.html">查看使用说明 ↗</a></div>
+          </article>
         </div>
       </section>
-
-      <section aria-label="中文界面效果示意">
-        <div class="preview-caption"><span class="section-label">A LITTLE MORE FAMILIAR</span><p>界面效果示意 · 歌曲双语需开启在线翻译</p></div>
-        <div class="preview">
-          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span>artlist.io / royalty-free-music</span></div>
-          <div class="music-app">
-            <div class="sidebar"><strong>Artlist / 中文</strong><p class="selected">♫ &nbsp;免版税音乐</p><p>◌ &nbsp;音效</p><p>▣ &nbsp;视频素材</p></div>
-            <div class="library">
-              <div class="library-head"><strong>发现适合你的音乐</strong><span class="translation-pill">中文 · 中英双语</span></div>
-              <div class="filters"><span>曲风</span><span>情绪</span><span>视频主题</span><span>乐器</span><span>编辑推荐 ↓</span></div>
-              <div class="track"><span class="play" aria-hidden="true">▶</span><div class="track-name">晨光（Morning Light）<small>原声 · 平静 · 钢琴</small></div><div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="duration">02:34</span></div>
-              <div class="track"><span class="play" aria-hidden="true">▶</span><div class="track-name">暮色天空（Evening Sky）<small>电影配乐 · 梦幻 · 弦乐</small></div><div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="duration">03:12</span></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section class="guide" id="install" aria-labelledby="install-title">
-        <div><span class="section-label">GET STARTED</span><h2 id="install-title">三步，开始用中文找歌。</h2><p class="guide-intro">适用于桌面版 Chrome、Edge 和 Firefox。</p></div>
+        <div><h2 id="install-title">选好网站，三步安装。</h2><p class="guide-intro">适用于桌面版 Chrome、Edge 和 Firefox。</p></div>
         <ol class="steps">
-          <li><div><strong>安装篡改猴扩展</strong><p>访问 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey 官网</a>，选择你的浏览器并安装扩展。按扩展提示启用用户脚本权限。</p></div></li>
-          <li><div><strong>解压安装包并导入脚本</strong><p>点击上方“下载 ZIP 安装包”并解压，在篡改猴的“管理面板 → 实用工具 → 从文件导入”中选择解压得到的 .user.js 文件，并确认安装。</p></div></li>
-          <li><div><strong>打开 Artlist，开启中文体验</strong><p>刷新 <a href="https://artlist.io/royalty-free-music" target="_blank" rel="noopener noreferrer">Artlist 音乐页面</a>。常用界面自动翻译；要翻译歌曲名和描述，点击右下角“中 / EN”菜单，选择“开启歌曲名在线翻译”。</p></div></li>
+          <li><div><strong>安装篡改猴</strong><p>访问 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey 官网</a>，为你的浏览器安装扩展。</p></div></li>
+          <li><div><strong>下载、解压并导入</strong><p>下载对应网站的 ZIP，在篡改猴“管理面板 → 实用工具 → 从文件导入”中选择解压得到的 .user.js 文件。</p></div></li>
+          <li><div><strong>刷新对应网站</strong><p>确认安装后刷新网页。每个网站的使用方式、可选功能与更新说明，可在对应的使用说明中查看。</p></div></li>
         </ol>
       </section>
-
-      <section class="details-section" aria-labelledby="faq-title">
-        <div><span class="section-label">GOOD TO KNOW</span><h2 id="faq-title">使用之前，了解这些。</h2></div>
-        <div>
-          <details open><summary>歌曲名称也能翻译吗？</summary><p>可以。开启在线翻译后，会补译可识别的歌曲名称和音乐描述，默认显示“中文（English）”，也可切换为仅中文。音乐人姓名尽量保留原文。这里翻译的是页面文字，不是音频或演唱内容。</p></details>
-          <details><summary>翻译需要联网吗？</summary><p>常用界面使用内置词库，无需连接翻译服务。歌曲名和描述的在线补译会将符合条件的页面文字发送至 Google，需要能访问 <code>translate.googleapis.com</code>。在线翻译默认关闭，接口连接失败时本地词库仍可使用。</p></details>
-          <details><summary>如何切换回英文或处理未译内容？</summary><p>点击页面右下角的“中 / EN”菜单，选择“显示英文原文”。网络恢复后，可点击“重新扫描 / 重试未译内容”。</p></details>
-          <details><summary>支持所有 Artlist 页面吗？</summary><p>脚本面向常用界面和音乐页面，已经通过本地模拟浏览器测试，尚未在真实登录后的 Artlist 页面完整验证。网站结构变化可能影响识别，无法保证每处文字都覆盖。授权、价格和条款请以 Artlist 原文为准。<a href="./README.md">查看完整说明</a>。</p></details>
-        </div>
-      </section>
     </main>
-    <footer><p>Artlist 中文助手 · 独立制作的浏览器脚本，与 Artlist 官方无关联。</p><a href="./downloads/artlist-zh-CN-v1.0.3.zip" download="artlist-zh-CN-v1.0.3.zip">下载 ZIP · v1.0.3 ↓</a></footer>
+    <footer><p>网站翻译 · 不同网站，各自一份中文体验。</p><a href="#catalog">返回下载目录 ↑</a></footer>
   </div>
 </body>
 </html>
