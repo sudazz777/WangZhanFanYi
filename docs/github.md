@@ -4,7 +4,7 @@ GitHub 常用界面的简体中文翻译脚本，适用于桌面版 Chrome、Edg
 
 ## 下载与安装
 
-### [⬇ 下载 GitHub 翻译 ZIP 安装包 v1.0.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/github-translation-v1.0.0.zip)
+### [⬇ 下载 GitHub 翻译 ZIP 安装包 v1.0.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/github-translation-v1.0.1.zip)
 
 压缩包包含 `github-zh-CN.user.js` 和 `安装说明.txt`。
 
@@ -20,6 +20,13 @@ GitHub 常用界面的简体中文翻译脚本，适用于桌面版 Chrome、Edg
 ![GitHub 翻译下载页面效果图](./github-preview.png)
 
 </details>
+
+## v1.0.1 更新
+
+- 补充全局侧栏中的动态流、所有议题、所有拉取请求、所有仓库、Copilot 助手、MCP 注册表和智能体。
+- 补充仓库设置侧栏、模板仓库、默认分支说明、版本不可变性、社交分享预览和维基说明。
+- 收窄代码保护范围，允许旧版页面容器和页面级禁用机翻的布局翻译固定控件；仍保留其中的代码、用户正文和输入值。
+- 修复被快捷键节点拆开的搜索提示，保留原快捷键与按钮行为。
 
 ## 界面翻译
 
@@ -50,6 +57,6 @@ GitHub 常用界面的简体中文翻译脚本，适用于桌面版 Chrome、Edg
 
 ## 验证范围
 
-已读取公开的 [仓库页面](https://github.com/octocat/Hello-World) 和 [议题列表](https://github.com/octocat/Hello-World/issues) 的实际 HTML，并在离线浏览器中验证导航翻译及文件、议题标题、作者内容保护。另已通过模拟仓库、设置、差异、日志、手动正文翻译和 1,800 行列表性能测试。
+已读取公开的 [仓库页面](https://github.com/octocat/Hello-World) 和 [议题列表](https://github.com/octocat/Hello-World/issues) 的实际 HTML，并在离线浏览器中验证导航翻译及文件、议题标题、作者内容保护。另已通过模拟仓库、设置、差异、日志、手动正文翻译和 1,800 行列表性能测试。v1.0.1 增加了截图对应的全局侧栏、设置布局容器和分段说明回归测试；未获取登录后的真实设置页 DOM。
 
 未完整实测登录后的所有页面。GitHub 更新组件、类名或文案可能需要补充词库或保护规则，不能保证每处文字都覆盖。对于代码、技术标识和重要操作含义，以英文原文为准。

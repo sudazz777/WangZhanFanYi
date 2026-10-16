@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub 翻译
 // @namespace    github-zh-cn-local
-// @version      1.0.0
+// @version      1.0.1
 // @description  本地翻译 GitHub 常用界面，保护代码、文件名和用户正文；可手动选中文字在线翻译。
 // @match        https://github.com/*
 // @run-at       document-idle
@@ -18,12 +18,14 @@
   'use strict';
   const KEY = 'github-zh-v1';
   const ATTRS = ['placeholder', 'title', 'aria-label'];
-  const CODE_ROOT = 'pre,code,kbd,samp,.blob-wrapper,.js-file-content,.js-file-line-container,.react-code-view,.react-code-viewer,[data-testid="code-viewer"],[data-testid="code-editor"],[data-testid="file-content"],[data-testid="diff-view"],.diff-table,.diff-view,.file-diff,.CodeMirror,.cm-editor,.monaco-editor,.ace_editor,.highlight,[data-testid="log-viewer"],.js-check-log-line';
+  // js-file-content 是旧版页面容器，不能据此把整块界面当成代码。
+  const CODE_ROOT = 'pre,code,kbd,samp,.blob-wrapper,.js-file-line-container,.react-code-view,.react-code-viewer,[data-testid="code-viewer"],[data-testid="code-editor"],[data-testid="file-content"],[data-testid="diff-view"],.diff-table,.diff-view,.file-diff,.CodeMirror,.cm-editor,.monaco-editor,.ace_editor,.highlight,[data-testid="log-viewer"],.js-check-log-line';
   const CODE_SKIP = CODE_ROOT + ',.blob-code,.blob-code-inner,.react-code-text,.react-code-line,.log-line,[data-testid="log-line"],[data-testid="code-cell"]';
   const CONTENT_SKIP = '.markdown-body,.comment-body,.js-comment-body,.markdown-title,.js-issue-title,.commit-title,.commit-message,.commit-desc,.js-commit-title,.release-title,.milestone-title,[data-testid="issue-title"],[data-testid="issue-pr-title"],[data-testid="issue-listitem-title-link"],[data-testid="discussion-title"],[data-testid="markdown-body"],[data-testid="comment-body"],[data-testid="commit-message"],[data-testid="release-title"]';
   const IDENTITY_SKIP = '.react-directory-filename-cell,.react-directory-row-name-cell-large-screen,.js-navigation-open,.branch-name,.commit-ref,.head-ref,.base-ref,.author,.user-mention,.team-mention,.IssueLabel,[data-testid="author-filter-link"],[data-testid="branch-name"],[data-testid="file-name"],[data-testid="file-name-cell"],[data-testid="repository-name"],[data-testid="user-name"],[data-testid="issue-label"],[data-testid="workflow-name"],[data-testid="job-name"],[data-testid="check-run-name"],[data-testid="release-tag"],[data-testid="project-title"],[data-testid="project-name"],a[href*="/releases/tag/"],[data-component="Breadcrumbs"],[itemprop="name"],[itemprop="author"],a[data-hovercard-type="user"],a[data-hovercard-type="organization"],a[data-hovercard-type="repository"],a[data-hovercard-type="issue"],a[data-hovercard-type="pull_request"]';
   const EDITABLE = 'input,textarea,select,[role="textbox"],[contenteditable]:not([contenteditable="false"])';
-  const SKIP = 'script,style,noscript,svg,canvas,iframe,[translate="no"],[data-github-zh],' + CODE_SKIP + ',' + CONTENT_SKIP + ',' + IDENTITY_SKIP + ',[contenteditable]:not([contenteditable="false"])';
+  // 页面级 translate=no 用于禁止浏览器整页机翻，不代表其中的固定控件是用户正文。
+  const SKIP = 'script,style,noscript,svg,canvas,iframe,[translate="no"]:not(html,body,main,.application-main,.repository-content,.js-file-content,.Layout,.Layout-main,.Layout-sidebar),[data-github-zh],' + CODE_SKIP + ',' + CONTENT_SKIP + ',' + IDENTITY_SKIP + ',[contenteditable]:not([contenteditable="false"])';
   const TEXT_SKIP = SKIP + ',input,textarea,select,[role="textbox"]';
   const RESERVED = new Set('features enterprise pricing solutions resources customer-stories security sponsors settings organizations orgs users login signup logout account new notifications dashboard issues pulls discussions projects marketplace explore topics trending collections search copilot codespaces sessions site about contact apps readme'.split(' '));
   const originals = new Map();
@@ -31,6 +33,7 @@
   const scanTasks = [];
   const attributeJobs = new Map();
   const localCache = new Map();
+  const searchHints = new WeakSet();
   let scanTimer = 0;
   let needsPrune = false;
   let host;
@@ -46,6 +49,13 @@
   }
   const dictionary = `
 Home|Homepage|首页
+Feed|动态流
+All issues|所有议题
+All pull requests|所有拉取请求
+All repositories|所有仓库
+Copilot|Copilot 助手
+Agents|智能体
+MCP registry|MCP 注册表
 Dashboard|仪表盘
 Overview|概览
 Code|代码
@@ -490,6 +500,9 @@ Started|开始时间
 Finished|结束时间
 General|常规
 Access|访问权限
+Moderation|内容管理
+Code, planning, and automation|Code, planning and automation|代码、规划与自动化
+Planning|规划
 Collaborators|协作者
 Collaborators and teams|协作者和团队
 Manage access|管理访问权限
@@ -568,6 +581,19 @@ Automatically merge pull requests|自动合并拉取请求
 Allow auto-merge|允许自动合并
 Social preview|社交分享预览
 Template repository|模板仓库
+Template repositories let users generate new repositories with the same directory structure and files.|模板仓库可让用户生成具有相同目录结构和文件的新仓库。
+Learn more about template repositories.|Learn more about template repositories|了解模板仓库的更多信息
+The default branch is considered the “base” branch in your repository, against which all pull requests and code commits are automatically made, unless you specify a different branch.|默认分支是仓库的基础分支。除非另行指定，所有拉取请求和代码提交都会默认以此分支为目标。
+The default branch is considered the|默认分支被视为仓库的
+“base”|"base"|“基础”
+branch in your repository, against which all pull requests and code commits are automatically made, unless you specify a different branch.|分支。除非另行指定，所有拉取请求和代码提交都会默认以此分支为目标。
+Enable release immutability|启用发布版本不可变性
+Disallow assets and tags from being modified once a release is published.|版本发布后，禁止修改其资源和标签。
+Upload an image to customize your repository’s social media preview.|上传图片，自定义仓库在社交媒体上的分享预览。
+Images should be at least 640×320px (1280×640px for best display).|图片尺寸至少应为 640×320 像素（建议使用 1280×640 像素以获得最佳效果）。
+Download template|下载模板
+Wikis|维基
+Wikis host documentation for your repository.|维基用于托管仓库文档。
 Discussions settings|讨论设置
 Account|账户
 Account settings|账户设置
@@ -770,9 +796,17 @@ README|README 说明
     const value = attr ? node.getAttribute(attr) : node.nodeValue;
     if (!value || value.length > 1000 || !/[a-zA-Z]/.test(value)) return;
     if (originals.get(node)?.get(attr || '')?.output === value) return;
-    const zh = local(value.trim());
-    if (!zh) return;
     const el = attr ? node : node.parentElement;
+    let zh = local(value.trim());
+    // 搜索提示把 / 放在 kbd 中，只改两侧的文本节点，保留快捷键节点和事件。
+    if (!zh && !attr && el && /^(type|to search)$/.test(normalize(value))) {
+      const button = el.closest('button');
+      if (button && (searchHints.has(button) || (normalize(button.textContent) === 'type / to search' && button.querySelector('kbd')?.textContent.trim() === '/'))) {
+        searchHints.add(button);
+        zh = normalize(value) === 'type' ? '按' : '搜索';
+      }
+    }
+    if (!zh) return;
     if (!el || el.closest(attr ? SKIP : TEXT_SKIP) || identityLink(el)) return;
     put(entryFor(node, attr), zh);
   }

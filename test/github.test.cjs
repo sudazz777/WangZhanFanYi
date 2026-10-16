@@ -2,14 +2,15 @@ const { chromium } = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const script = fs.readFileSync(path.join(__dirname, '..', 'github-zh-CN.user.js'), 'utf8');
-const fixture = `<!doctype html><header><nav>
+const script = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'github-zh-CN.user.js'), 'utf8');
+const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
   <a data-tab-item="code" href="/Code/Settings">Code</a><a href="/Code/Settings/issues">Issues</a><a href="/Code/Settings/pulls">Pull requests</a>
   <a href="/Code/Settings/actions">Actions</a><a href="/Code/Settings/settings">Settings</a></nav>
   <a id="owner" data-hovercard-type="user" href="/Code">Code</a><strong itemprop="name"><a id="repo" href="/Code/Settings">Settings</a></strong>
   <nav data-component="Breadcrumbs"><a id="breadcrumb" href="/Code/Settings">Settings</a></nav></header>
   <main><button id="code-menu" data-action="clone">Code</button><button id="issue-button">New issue</button>
   <input id="search" placeholder="Search or jump to..." value="repo:Code/Settings is:open">
+  <button id="search-hint" aria-label="Search or jump to, type / to search">Type <kbd>/</kbd> to search</button>
   <textarea id="draft">Code Open Actions</textarea><input id="secret" type="password" value="secret-token">
   <div class="react-directory-filename-cell"><a id="file" href="/Code/Settings/blob/main/Code" title="Code">Code</a></div>
   <a id="file2" href="/Code/Settings/blob/main/Open">Open</a><span class="branch-name" id="branch">Open</span>
@@ -25,6 +26,27 @@ const fixture = `<!doctype html><header><nav>
   <span data-testid="workflow-name" id="workflow-name">Actions</span><a href="/Code/Settings/releases/tag/Code" id="version">Code</a>
   <a href="/orgs/Code/projects/1" id="project">Open</a><a href="/Code/Settings/blob/main/Code" class="btn" id="raw">Raw</a>
   <section id="settings"><label>Repository secrets</label><button>New repository secret</button><button>Save changes</button></section>
+  <section class="js-file-content" translate="no" id="settings-layout"><nav id="settings-nav">
+    <a href="/Code/Settings/settings">General</a><h3>Access</h3><a href="/Code/Settings/settings/access">Collaborators</a>
+    <a href="/Code/Settings/settings/interaction_limits">Moderation</a><h3>Code, planning, and automation</h3>
+    <a href="/Code/Settings/settings/rules">Rulesets</a><a href="/Code/Settings/settings/branches">Branches</a>
+    <a href="/Code/Settings/settings/tag_protection">Tags</a><a href="/Code/Settings/settings/actions">Actions</a>
+    <a href="/Code/Settings/settings/hooks">Webhooks</a><a href="/Code/Settings/settings/copilot">Copilot</a>
+    <a href="/Code/Settings/settings/planning">Planning</a><a href="/Code/Settings/settings/environments">Environments</a>
+    <a href="/Code/Settings/settings/codespaces">Codespaces</a><a href="/Code/Settings/settings/pages">Pages</a>
+    <h3>Security and quality</h3><a href="/Code/Settings/settings/security_analysis">Advanced Security</a>
+    <a href="/Code/Settings/settings/keys">Deploy keys</a><a href="/Code/Settings/settings/secrets">Secrets and variables</a>
+    <h3>Integrations</h3><a href="/Code/Settings/settings/installations">GitHub Apps</a></nav>
+    <h1 id="settings-general">General</h1><label for="repo-name">Repository name</label><input id="repo-name" value="ZiTiJianSuo"><button>Rename</button>
+    <label>Template repository</label><p id="template-description">Template repositories let users generate new repositories with the same directory structure and files. <a href="https://docs.github.com/example">Learn more about template repositories.</a></p>
+    <h2>Default branch</h2><p id="default-description">The default branch is considered the <strong>“base”</strong> branch in your repository, against which all pull requests and code commits are automatically made, unless you specify a different branch.</p>
+    <span class="branch-name" id="settings-branch">main</span><span class="branch-name" id="named-branch">General</span>
+    <h2>Releases</h2><label>Enable release immutability</label><p>Disallow assets and tags from being modified once a release is published.</p>
+    <h2>Social preview</h2><p>Upload an image to customize your repository’s social media preview.</p><p>Images should be at least 640×320px (1280×640px for best display).</p>
+    <a href="https://example.test/template">Download template</a><button>Edit</button><h2>Features</h2><label>Wikis</label><p>Wikis host documentation for your repository.</p>
+    <pre id="settings-code">General</pre><div class="blob-code" id="legacy-code">Rename</div>
+    <div class="markdown-body" id="settings-content">General</div><span translate="no" id="explicit-no">General</span>
+    <button id="settings-last">Save changes</button></section>
   <script type="application/json" id="json">{"Code":"Open"}</script></main>`;
 (async () => {
   const browser = await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
@@ -47,7 +69,7 @@ const fixture = `<!doctype html><header><nav>
       };
       document.querySelector('#issue-button').onclick = () => __clicks++;
     });
-    const protectedIds = ['owner','repo','breadcrumb','file','file2','branch','repo2','user2','source','viewer','diff','editor','log','readme','comment','issue-title','issue-link','commit','label','author','workflow-name','version','project','json'];
+    const protectedIds = ['owner','repo','breadcrumb','file','file2','branch','repo2','user2','source','viewer','diff','editor','log','readme','comment','issue-title','issue-link','commit','label','author','workflow-name','version','project','json','settings-branch','named-branch','settings-code','legacy-code','settings-content','explicit-no'];
     const protectedBefore = await page.evaluate(ids => Object.fromEntries(ids.map(id => [id,document.getElementById(id).innerHTML])), protectedIds);
     await page.addScriptTag({content:script});
     await page.waitForFunction(() => document.querySelector('#code-menu').textContent === '代码');
@@ -57,12 +79,32 @@ const fixture = `<!doctype html><header><nav>
     assert.equal(await page.locator('#search').inputValue(),'repo:Code/Settings is:open');
     assert.equal(await page.locator('#secret').inputValue(),'secret-token');
     assert.equal(await page.locator('#draft').inputValue(),'Code Open Actions');
+    await page.waitForFunction(() => document.querySelector('#settings-last').textContent === '保存更改');
+    assert.equal(await page.locator('#settings-general').textContent(),'常规');
+    assert.equal(await page.locator('#repo-name').inputValue(),'ZiTiJianSuo');
+    assert(!/[a-z]/i.test(await page.locator('#settings-nav').textContent().then(text => text.replaceAll('Webhook','').replaceAll('Copilot','').replaceAll('GitHub',''))));
+    for (const id of ['template-description','default-description']) {
+      const text = await page.locator('#'+id).textContent();
+      assert(!/[a-z]/i.test(text), id + ': ' + text);
+    }
+    for (const text of await page.locator('#settings-layout > h1,#settings-layout > h2,#settings-layout > label,#settings-layout > p,#settings-layout > a,#settings-layout > button').allTextContents()) assert(!/[a-z]/i.test(text), text);
+    assert.equal(await page.locator('#search-hint').textContent(),'按 / 搜索');
+    assert.equal(await page.locator('#search-hint kbd').textContent(),'/');
     const protectedAfter = await page.evaluate(ids => Object.fromEntries(ids.map(id => [id,document.getElementById(id).innerHTML])), protectedIds);
     assert.deepEqual(protectedAfter, protectedBefore);
     assert.equal(await page.locator('#file').getAttribute('title'),'Code');
     await page.locator('#issue-button').click(); assert.equal(await page.evaluate(() => __clicks),1);
     assert.equal(await page.evaluate(() => __requests.length),0);
     console.log('PASS: GitHub 导航、文件操作、设置与搜索提示；代码/差异/日志/文件名/分支/用户名/仓库名/正文保持原样，按钮与输入值不变');
+
+    const drawerLabels = [['Feed','动态流'],['All issues','所有议题'],['All pull requests','所有拉取请求'],['All repositories','所有仓库'],['Copilot','Copilot 助手'],['MCP registry','MCP 注册表'],['Agents','智能体']];
+    await page.evaluate(labels => {
+      const drawer = document.createElement('nav'); drawer.id='global-drawer';
+      for (const [en] of labels) {const a=document.createElement('a');a.href='/dashboard';a.textContent=en;drawer.append(a);}
+      document.body.append(drawer);
+    },drawerLabels);
+    await page.waitForFunction(labels => [...document.querySelectorAll('#global-drawer a')].every((el,i)=>el.textContent===labels[i][1]),drawerLabels);
+    console.log('PASS: 截图中的设置侧栏、分段说明、布局容器、快捷键提示和动态全局菜单；仓库输入、分支与代码未改变');
 
     const labels = [['Download ZIP','下载 ZIP'],['Create a new release','创建新版本'],['Merge pull request','合并拉取请求'],['Security and quality','安全与质量'],['Run workflow','运行工作流'],['Re-run failed jobs','重新运行失败作业'],['Build and deployment','构建与部署'],['Deploy from a branch','从分支部署'],['Secrets and variables','机密与变量'],['Danger Zone','危险操作区'],['3 commits','3 提交记录'],['Issues 12','议题 12'],['1.3k Open','1.3k 未关闭']];
     await page.evaluate(labels => {
@@ -78,6 +120,8 @@ const fixture = `<!doctype html><header><nav>
     await host.getByRole('button',{name:'显示英文原文',exact:true}).click();
     assert.equal(await page.locator('#code-menu').textContent(),'Code');
     assert.equal(await page.locator('#search').getAttribute('placeholder'),'Search or jump to...');
+    assert.equal(await page.locator('#search-hint').textContent(),'Type / to search');
+    assert.equal(await page.locator('#settings-general').textContent(),'General');
     await host.getByRole('button',{name:'恢复中文界面',exact:true}).click();
     await page.waitForFunction(() => document.querySelector('#code-menu').textContent==='代码');
     console.log('PASS: 动态弹窗、节点复用、计数标签、原文恢复与重新启用');
