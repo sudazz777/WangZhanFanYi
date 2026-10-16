@@ -37,3 +37,12 @@ node test/performance.test.cjs musicbed-zh-CN.user.js
 ```
 
 Musicbed 的 1,800 行模拟列表中，连续展开筛选只遍历新增弹窗的 40 个后代节点，主列表重扫为 0 次；离线模式滚动遍历为 0 个节点。功能测试额外验证 Musicbed 的歌曲和音效路径、以歌搜歌、音乐特征、调性、BPM、音乐人保护及独立缓存。
+
+## GitHub 验证
+
+```sh
+node test/github.test.cjs
+node test/performance.test.cjs github-zh-CN.user.js
+```
+
+GitHub 的 1,800 行模拟列表同样只处理新增弹窗的 40 个后代节点，主列表重扫为 0 次，滚动遍历为 0。代码、差异、日志、文件名和用户正文另有保护断言；手动选中翻译只在确认后请求服务，不修改正文，也不缓存译文。
