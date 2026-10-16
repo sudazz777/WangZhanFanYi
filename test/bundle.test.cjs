@@ -30,6 +30,9 @@ const script = fs.readFileSync(path.join(root,release.filename),'utf8');
       await page.addScriptTag({content:script});
       if(site) {
         await page.locator(`[data-${site.id}-zh="panel"]`).waitFor({state:'attached'});
+        assert.equal(await page.locator(`[data-${site.id}-zh] #update-repo`).count(),0);
+        assert.equal(await page.locator(`[data-${site.id}-zh] #update-download`).count(),0);
+        if(site.id==='github') assert.equal(await page.locator('[data-github-zh] #selection').count(),0);
         const keys=await page.evaluate(()=>__keys);
         assert(keys.length>0);
         assert(keys.every(k=>k.startsWith(site.id+'-zh-v1')),JSON.stringify(keys));

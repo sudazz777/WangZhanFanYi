@@ -2,6 +2,8 @@
 
 ## 合并版发布
 
+合并版更新界面维护在 `scripts/bundle-update-module.js`。发现新版本后只展示本仓库固定地址的 `.user.js` 在线更新链接，由篡改猴打开安装确认页；不下载执行脚本、不自动替换自身，助手不提供 ZIP 下载入口，仓库下载页仍提供首次安装包。
+
 当前主下载为“网站翻译”合并版，统一版本记录在 `scripts/bundle-config.json`。修改版本后运行 `python scripts/sync-update-metadata.py`，再运行 `python scripts/build-bundle.py`，生成 `websites-zh-CN.user.js` 与 `updates/websites.meta.js`。
 
 `scripts/render-core.js` 是合并版唯一的防闪现核心，接收各网站的扫描、翻译与保护规则。共用微任务扫描、分批预算和局部等待超时；网站词库、在线候选识别、正文与输入保护保持在各网站模块。构建时去除旧独立模块内的渲染实现与独立更新身份，所有网站使用合并版的版本和 ZIP。

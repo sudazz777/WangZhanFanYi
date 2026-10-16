@@ -128,28 +128,28 @@ const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
 
     async function select(id) { await page.evaluate(id => { const range=document.createRange();range.selectNodeContents(document.getElementById(id));const selection=getSelection();selection.removeAllRanges();selection.addRange(range); }, id); }
     const result = () => host.locator('#result').textContent();
-    const selectionButton = () => host.getByRole('button',{name:'翻译选中文字（在线）',exact:true});
-    await select('source'); await selectionButton().click();
+    const translateSelected = () => page.evaluate(() => { __menus.find(m=>m.name==='翻译选中文字（在线）').action(); });
+    await select('source'); await translateSelected();
     assert((await result()).includes('代码区')); assert.equal(await page.evaluate(() => __requests.length),0);
     await page.evaluate(() => {
       const p=document.createElement('p');p.id='too-long';p.textContent='A'.repeat(1501);document.querySelector('#readme').append(p);
       const mixed=document.createElement('p');mixed.id='mixed';mixed.append('Review ');
       const code=document.createElement('code');code.textContent='Code';mixed.append(code,' before merging.');document.querySelector('#readme').append(mixed);
     });
-    await select('too-long'); await selectionButton().click(); assert((await result()).includes('1500'));
-    await select('mixed'); await selectionButton().click(); assert((await result()).includes('包含代码'));
+    await select('too-long'); await translateSelected(); assert((await result()).includes('1500'));
+    await select('mixed'); await translateSelected(); assert((await result()).includes('包含代码'));
     assert.equal(await page.evaluate(() => __requests.length),0);
-    accept = false; await select('prose'); await selectionButton().click();
+    accept = false; await select('prose'); await translateSelected();
     assert.equal(await page.evaluate(() => __requests.length),0);
-    accept = true; await select('prose'); await selectionButton().click();
+    accept = true; await select('prose'); await translateSelected();
     await page.waitForFunction(() => document.querySelector('[data-github-zh]').shadowRoot.getElementById('result').textContent === '合并此拉取请求前，请审查更改。');
     assert.equal(await page.locator('#prose').textContent(),'Review the changes before merging this pull request.');
     assert.deepEqual(await page.evaluate(() => __requests),[{text:'Review the changes before merging this pull request.',anonymous:true}]);
     assert(!JSON.stringify(await page.evaluate(() => __store)).includes('Review the changes'));
     await host.getByRole('button',{name:'清空翻译结果',exact:true}).click(); assert.equal(await result(),'');
-    await page.evaluate(() => { __delay=250; }); await select('prose'); await selectionButton().click();
+    await page.evaluate(() => { __delay=250; }); await select('prose'); await translateSelected();
     await host.getByRole('button',{name:'清空翻译结果',exact:true}).click(); await page.waitForTimeout(350); assert.equal(await result(),'');
-    await page.evaluate(() => { __delay=20;__fail=true; }); await select('prose'); await selectionButton().click();
+    await page.evaluate(() => { __delay=20;__fail=true; }); await select('prose'); await translateSelected();
     await page.waitForFunction(() => document.querySelector('[data-github-zh]').shadowRoot.getElementById('result').textContent.includes('在线翻译失败'));
     assert.equal(await page.locator('#code-menu').textContent(),'代码');
     console.log('PASS: 只在选中并确认后在线翻译、拒绝代码区、结果不改写正文/不缓存、取消确认/清空在途结果和网络失败处理');

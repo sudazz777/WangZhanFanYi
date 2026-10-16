@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         网站翻译
 // @namespace    wangzhanfanyi-zh-cn
-// @version      1.0.0
+// @version      1.0.1
 // @description  一个脚本翻译 Artlist、Musicbed 和 GitHub，自动识别网站，支持检查更新。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*

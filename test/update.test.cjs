@@ -50,9 +50,17 @@ const root = path.join(__dirname, '..');
       await respond(meta); assert.match(await status(),/已是最新/);
       await start(); await respond(versionMeta('1.10.0'));
       assert.match(await status(),/发现新版 v1.10.0/);
-      const download = panel.locator('#update-download');
-      assert.equal(await download.getAttribute('href'),config.downloadBase+config.id+'-translation-v1.10.0.zip');
+      const download = panel.locator(bundled?'#update-install':'#update-download');
+      const expectedLink = version => bundled ? config.installUrl+'?version='+version : config.downloadBase+config.id+'-translation-v'+version+'.zip';
+      assert.equal(await download.getAttribute('href'),expectedLink('1.10.0'));
+      const install = panel.locator('#update-install');
+      if (bundled) {
+        assert.equal(await install.getAttribute('href'),config.installUrl+'?version=1.10.0');
+        assert.equal(await install.getAttribute('target'),'_blank');
+        assert.match(await status(),/篡改猴中确认/);
+      }
       await start(); assert.equal(await download.getAttribute('href'),null);
+      if (bundled) assert.equal(await install.getAttribute('href'),null);
       await respond(versionMeta('0.9')); assert.match(await status(),/无需降级/);
       for (const code of [401,403,404,500]) {
         await start(); await respond('',code);
@@ -62,13 +70,15 @@ const root = path.join(__dirname, '..');
       for (const bad of ['<html>login</html>',meta.replace(config.namespace,'other-namespace'),meta.replace(config.name,'other-name'),versionMeta('2.0/evil'),meta.replace('// ==/UserScript==','// @version 9.0\n// ==/UserScript=='),meta+' '.repeat(17000)]) {
         await start(); await respond(bad); assert.match(await status(),/格式不正确/);
       }
-      // Remote download URLs are ignored; only trusted locally constructed ZIP links are offered.
+      // Remote download URLs are ignored; only trusted locally constructed update links are offered.
       await start(); await respond(versionMeta('9.0').replace(/(@downloadURL\s+)\S+/, '$1https://attacker.example/evil.js'));
-      assert.equal(await download.getAttribute('href'),config.downloadBase+config.id+'-translation-v9.0.zip');
+      assert.equal(await download.getAttribute('href'),expectedLink('9.0'));
+      if (bundled) assert.equal(await install.getAttribute('href'),config.installUrl+'?version=9.0');
       for (const [event,message] of [['onerror',/无法连接/],['ontimeout',/超时/],['onabort',/已取消/]]) {
         await start(); await respond('',0,event); assert.match(await status(),message);
         await respond(versionMeta('99.0')); assert.match(await status(),message);
         assert.equal(await panel.locator('#check-update').isDisabled(),false);
+        if (bundled) assert.equal(await install.getAttribute('href'),null);
       }
       // Checking remains available while translation is disabled.
       await page.evaluate(() => __menus.find(x=>x.name.includes('界面切换')||x.name==='中文 / 英文切换').fn());
