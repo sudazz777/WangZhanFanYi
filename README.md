@@ -4,7 +4,7 @@
 
 ## 下载目录
 
-### [⬇ 下载网站翻译 ZIP 安装包 · v1.0.1（三站合一）](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.0.1.zip)
+### [网站翻译 · v1.0.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.0.1.zip)
 
 安装包包含一个 `websites-zh-CN.user.js`、安装说明和开源许可证。只需导入这一个脚本。
 

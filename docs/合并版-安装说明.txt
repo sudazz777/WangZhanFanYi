@@ -1,4 +1,4 @@
-网站翻译 v1.0.1 · 三站合一
+网站翻译 v1.0.1
 
 支持的网站
 Artlist：https://artlist.io/ 及 https://www.artlist.io/
