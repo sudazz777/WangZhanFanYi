@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Artlist 简体中文助手（含歌曲界面）
 // @namespace    artlist-zh-cn-local
-// @version      1.0.1
+// @version      1.0.2
 // @description  翻译 Artlist 导航、音乐筛选、播放器和歌曲详情；可选在线翻译歌曲名及描述，保留英文原名。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*
@@ -110,6 +110,7 @@ All Filters|全部筛选
 More Filters|更多筛选
 Clear Filters|清除筛选
 Clear All|全部清除
+Clear|清除
 Reset|重置
 Apply|应用
 Show Results|显示结果
@@ -144,9 +145,22 @@ Male Vocals|男声
 Female Vocals|女声
 Choir|合唱
 Duet|对唱
+Group|多人合唱
+Acapella|Acappella|A cappella|A capella|无伴奏人声
+Includes Stems|Include Stems|With Stems|包含分轨
+Hide Downloaded|隐藏已下载
+Hide Downloaded Songs|Hide Downloaded Tracks|隐藏已下载歌曲
 Duration|时长
+Sec|Secs|Second|Seconds|秒
+Min|Mins|Minute|Minutes|分钟
+Hr|Hrs|Hour|Hours|小时
 Length|长度
 Tempo|速度
+Slow|慢速
+Slow-Med|Slow-Medium|Slow - Med|Slow - Medium|中慢速
+Med|中速
+Med-Fast|Medium-Fast|Med - Fast|Medium - Fast|中快速
+Fast|快速
 BPM|每分钟节拍（BPM）
 Key|调性
 Scale|音阶
@@ -442,6 +456,14 @@ Halloween|万圣节
     if (colon && WORDS.has(colon[1])) return WORDS.get(colon[1]) + '：';
     const count = key.match(/^([\d,]+)\s+(songs?|tracks?|results?|versions?)$/);
     if (count) return count[1] + ({ song: ' 首歌曲', track: ' 首歌曲', result: ' 条结果', version: ' 个版本' })[count[2].replace(/s$/, '')];
+    // 时长筛选按单位解析，覆盖小数、比较符和“3+ min”等写法。
+    const duration = key.match(/^([<>]=?|[≤≥])?\s*(\d+(?:\.\d+)?)\s*(\+)?\s*(s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?)\s*(\+)?$/);
+    if (duration) {
+      const [, comparison, amount, plusBefore, unit, plusAfter] = duration;
+      const zhUnit = unit.startsWith('s') ? '秒' : unit.startsWith('m') ? '分钟' : '小时';
+      const prefix = { '<': '少于', '>': '多于', '<=': '不超过', '≤': '不超过', '>=': '不少于', '≥': '不少于' }[comparison] || '';
+      return prefix + amount + zhUnit + (plusBefore || plusAfter ? '以上' : '');
+    }
     const action = text.trim().match(/^(Play|Pause|Download|Share)\s+(.+)$/i);
     if (action) return WORDS.get(normalize(action[1])) + ' ' + action[2];
     return null;

@@ -83,6 +83,14 @@ const fixture = `<!doctype html><html><body>
       ['Retro', '复古'], ['Soul & RnB', '灵魂乐与节奏布鲁斯'], ['Worship', '敬拜音乐'],
       ['Time‑Lapse', '延时摄影'], ['  Soul\u00a0＆\u00a0RnB  ', '  灵魂乐与节奏布鲁斯  '],
       ['Claps&Snaps', '拍手与响指'], ['Lo‑Fi & Chill Beats', '低保真与休闲节拍'],
+      ['Clear', '清除'], ['Group', '多人合唱'], ['Acapella', '无伴奏人声'],
+      ['Hide Downloaded', '隐藏已下载'], ['Includes Stems', '包含分轨'], ['Hide Downloaded Songs', '隐藏已下载歌曲'],
+      ['< 30 sec', '少于30秒'], ['< 1 min', '少于1分钟'], ['< 1.5 min', '少于1.5分钟'],
+      ['3+ min', '3分钟以上'], ['4+ min', '4分钟以上'],
+      ['Slow', '慢速'], ['Slow–Med', '中慢速'], ['Med-Fast', '中快速'], ['Fast', '快速'],
+      ['A cappella', '无伴奏人声'], ['Slow - Medium', '中慢速'], ['Medium‑Fast', '中快速'],
+      ['≤ 45 seconds', '不超过45秒'], ['>= 2 minutes', '不少于2分钟'], ['2 min+', '2分钟以上'],
+      ['1.5 min', '1.5分钟'], ['1 hr', '1小时'],
     ];
     await page.evaluate(labels => {
       const popup = document.createElement('div');
@@ -93,21 +101,38 @@ const fixture = `<!doctype html><html><body>
       }
       // 网站的弹出层可以在 main 之外，本地词库也应覆盖。
       document.body.append(popup);
+      const slider = document.createElement('input');
+      slider.type = 'range'; slider.id = 'bpm-slider'; slider.min = '20'; slider.max = '200'; slider.value = '100';
+      popup.append(slider);
+      popup.querySelector('button').setAttribute('data-filter-value', 'Drone Shots');
+      const splitDuration = document.createElement('button');
+      splitDuration.id = 'split-duration';
+      const amount = document.createElement('span'); amount.textContent = '< 30 ';
+      const unit = document.createElement('span'); unit.textContent = 'sec';
+      splitDuration.append(amount, unit);
+      // 数值与单位分属不同节点，验证单位也能独立翻译。
+      document.body.append(splitDuration);
     }, filterLabels);
     await page.waitForFunction(labels => {
       const chips = [...document.querySelectorAll('#filter-popup button')];
       return chips.every((chip, i) => chip.textContent === labels[i][1] && chip.getAttribute('aria-label') === labels[i][1]);
     }, filterLabels);
     assert.equal(await page.evaluate(() => __requests.length), 0);
+    assert.equal(await page.locator('#bpm-slider').inputValue(), '100');
+    assert.equal(await page.locator('#bpm-slider').getAttribute('min'), '20');
+    assert.equal(await page.locator('#bpm-slider').getAttribute('max'), '200');
+    assert.equal(await page.locator('#filter-popup button').first().getAttribute('data-filter-value'), 'Drone Shots');
+    await waitText('split-duration', '< 30 秒');
     await click('toggle');
     assert.deepEqual(await page.locator('#filter-popup button').allTextContents(), filterLabels.map(([en]) => en));
+    assert.equal(await text('split-duration'), '< 30 sec');
     await click('toggle');
     await page.waitForFunction(() => document.querySelector('#filter-popup button').textContent === '航拍');
     // 复用同一按钮来展示另一个筛选项，也应重新翻译。
     await page.evaluate(() => { document.querySelector('#filter-popup button').firstChild.nodeValue = 'Worship'; });
     await page.waitForFunction(() => document.querySelector('#filter-popup button').textContent === '敬拜音乐');
-    await page.evaluate(() => document.querySelector('#filter-popup').remove());
-    console.log('PASS: 截图中 28 个漏译项、连字符及空格变体、弹窗动态挂载、原文恢复和筛选节点复用');
+    await page.evaluate(() => { document.querySelector('#filter-popup').remove(); document.querySelector('#split-duration').remove(); });
+    console.log('PASS: 分类及高级筛选漏译、人声/分轨/下载/时长/速度、动态弹窗和原文恢复；筛选参数及滑块数值不变');
 
     await page.evaluate(() => {
       const row = document.createElement('button'); row.id = 'dynamic'; row.textContent = 'Download'; document.querySelector('main').append(row);

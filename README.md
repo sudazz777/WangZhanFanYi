@@ -4,11 +4,11 @@
 
 ## 下载与安装
 
-### [⬇ 下载 Artlist 中文助手 ZIP 安装包 v1.0.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/artlist-zh-CN-v1.0.1.zip)
+### [⬇ 下载 Artlist 中文助手 ZIP 安装包 v1.0.2](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/artlist-zh-CN-v1.0.2.zip)
 
 压缩包内包含翻译脚本 `artlist-zh-CN.user.js` 和 `安装说明.txt`。
 
-**v1.0.1 更新：** 补齐视频主题、乐器、情绪和曲风筛选中的 28 个漏译项；兼容不同连字符和空格写法。已安装旧版的用户，导入新版脚本确认更新后，刷新 Artlist 页面即可。
+**v1.0.2 更新：** 补齐高级筛选中的清除、人声类型、分轨、已下载歌曲、时长及速度标签；保留此前分类补译，并兼容小数时长与常见符号写法。已安装旧版的用户，导入新版脚本确认更新后，刷新 Artlist 页面即可。
 
 **安装：** 先安装 [Tampermonkey（篡改猴）](https://www.tampermonkey.net/)，下载并解压 ZIP 安装包，在篡改猴 **管理面板 → 实用工具 → 从文件导入** 中选择解压得到的 `.user.js` 文件。
 
