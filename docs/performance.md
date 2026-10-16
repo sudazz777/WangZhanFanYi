@@ -81,3 +81,20 @@ node test/performance.test.cjs github-zh-CN.user.js --settings
 额外暂停后台处理批次，验证局部待处理区域在 180 毫秒超时后恢复显示，并验证关闭中文、样式被替换后的恢复。大页面后台分批处理，每批目标为 4 毫秒、最多 320 步；不递归占满整个微任务队列。1800 行性能测试仍为 20 次点击只遍历 40 个新增节点、整页重扫 0 次，滚动和代码锚点扫描均为 0。
 
 帧样本和微任务读数来自模拟页面，不是登录后网站的逐帧录像；数值随浏览器时序变化。提前注入、已收录词条和局部短等待可以减少闪现，但不能保证扩展延迟、未知文字或超大页面在所有环境中都完全没有原文露出。
+
+### Artlist v1.0.5 与 Musicbed v1.0.1：同步减少英文闪现
+
+两个脚本同步提前启动、绘制前微任务、本地短等待和导航保留中文的处理。缓存命中的名称在本地扫描时直接显示；未缓存的在线内容仍使用原来的可见性和请求队列，不用网络响应控制界面显示。
+
+```sh
+node test/music-render.test.cjs artlist-zh-CN.user.js
+node test/music-render.test.cjs musicbed-zh-CN.user.js
+node test/browser.test.cjs
+node test/musicbed.test.cjs
+node test/performance.test.cjs artlist-zh-CN.user.js
+node test/performance.test.cjs musicbed-zh-CN.user.js
+```
+
+一次模拟对照结果中，Artlist v1.0.4 与 Musicbed v1.0.0 各自的首次 4 帧样本检出 1 帧界面英文、4 帧缓存名称原文，12 次新增菜单和 4 次导航写入均在绘制前保留英文，路径轮询还各触发 1 次已有中文还原。两个新版对应读数均为 0。测试额外验证导航时仍有效的在线请求只发送一次并完成，未缓存名称等待时可见，局部等待超时、关闭和样式恢复均能正确释放。
+
+两站 1,800 行列表测试仍为连续 20 次点击只处理 40 个新增后代节点，主列表重扫和滚动扫描均为 0。结果来自本地模拟和桩响应；首次加载耗时、真实网页和在线翻译受浏览器资源与网络影响，不能保证所有环境没有任何原文露出。

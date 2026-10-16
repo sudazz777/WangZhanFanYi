@@ -4,7 +4,7 @@
 
 ## 下载与安装
 
-### [⬇ 下载 Musicbed 翻译 ZIP 安装包 v1.0.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/musicbed-translation-v1.0.0.zip)
+### [⬇ 下载 Musicbed 翻译 ZIP 安装包 v1.0.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/musicbed-translation-v1.0.1.zip)
 
 压缩包内包含 `musicbed-zh-CN.user.js` 和 `安装说明.txt`。
 
@@ -21,6 +21,15 @@
 ![Musicbed 翻译下载页面效果图](./musicbed-preview.png)
 
 </details>
+
+## v1.0.1 更新：减少英文闪现
+
+- 同步 GitHub 翻译的提前启动与绘制前处理方式，动态小菜单优先翻译，站内切换保留已有中文。
+- 较大的新增区域分批处理，局部显示等待设有 180 毫秒超时；关闭翻译或处理失败后释放，不隐藏整个 body。
+- 开启在线翻译后，已缓存的歌曲或音效名称可立即使用本地译文；未缓存内容仍按可见性排队请求，不会让界面一直隐藏着等待网络。
+- 保留歌曲双语、人名与输入保护、缓存和网络失败重试；仅切换路径或查询条件时补扫，纯锚点变化不重扫。
+
+更新后需要刷新网页，提前启动才会生效。扩展延迟注入、未知文字和超大页面超过等待时间时，仍可能短暂显示原文。已通过模拟页面的首次帧、动态菜单、导航、缓存名称、在途响应、局部等待释放和功能/性能测试，尚未完整实测登录后的所有页面。
 
 ## 翻译内容
 

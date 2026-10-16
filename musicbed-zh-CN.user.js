@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Musicbed 翻译
 // @namespace    musicbed-zh-cn-local
-// @version      1.0.0
+// @version      1.0.1
 // @description  翻译 Musicbed 导航、歌曲/音效筛选、播放器与详情；可选在线翻译名称和公开正文，保留英文原名。
 // @match        https://musicbed.com/*
 // @match        https://www.musicbed.com/*
-// @run-at       document-idle
+// @run-at       document-start
 // @noframes
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -39,6 +39,12 @@
   const inView = new Set();
   let viewportObserver;
   let scanTimer = 0;
+  let scanQueued = false;
+  let scanGeneration = 0;
+  const maskableRoots = new WeakSet();
+  const pendingMasks = new Map();
+  let revealStyle;
+  const MASK_LIMIT = 180;
   let visibleTimer = 0;
   let needsPrune = false;
   let timer = 0;
@@ -778,6 +784,11 @@ Halloween|万圣节
     if (zh && !isTitle) { put(entryFor(node, attr), zh); return; }
     if (!candidate(el, text, attr) || el.closest('[hidden],[aria-hidden="true"]')) return;
     const entry = entryFor(node, attr);
+    // 缓存可立即在本地显示；没有命中的在线请求仍按可见性排队。
+    if (Object.hasOwn(cache, text)) {
+      put(entry, isTitle && settings.bilingual ? cache[text] + '（' + text + '）' : cache[text]);
+      return;
+    }
     if (failed.has(text) || Date.now() < pausedUntil) return;
     if (pending.get(text)?.some(item => item.entry === entry)) return;
     let entries = waitingElements.get(el);
@@ -921,14 +932,63 @@ Halloween|万圣节
       yield;
     }
   }
-  function schedule(root) {
+  function installRevealStyle() {
+    if (revealStyle?.isConnected || !document.documentElement) return;
+    if (!revealStyle) {
+      revealStyle = document.createElement('style');
+      revealStyle.setAttribute('data-musicbed-zh-style', 'reveal');
+      revealStyle.textContent = '[data-musicbed-zh-pending],[data-musicbed-zh-pending] *{visibility:hidden!important}';
+    }
+    (document.head || document.documentElement).append(revealStyle);
+  }
+  function reveal(root) {
+    const state = pendingMasks.get(root);
+    if (!state) return;
+    clearTimeout(state.timer);
+    pendingMasks.delete(root);
+    root.removeAttribute('data-musicbed-zh-pending');
+  }
+  function conceal(task) {
+    const root = task.root;
+    if (!task.conceal || task.masked || !root.isConnected || root.nodeType !== Node.ELEMENT_NODE || root === document.body || root === document.documentElement) return;
+    installRevealStyle();
+    if (!revealStyle?.isConnected) return;
+    let state = pendingMasks.get(root);
+    if (!state) {
+      state = {count:0, timer:setTimeout(() => reveal(root), MASK_LIMIT)};
+      pendingMasks.set(root, state);
+      root.setAttribute('data-musicbed-zh-pending', '');
+    }
+    state.count++;
+    task.masked = state;
+  }
+  function finishTask(task) {
+    if (!task.masked) return;
+    const state = pendingMasks.get(task.root);
+    if (state === task.masked && --state.count === 0) reveal(task.root);
+  }
+  function schedule(root, conceal = false) {
     if (!settings.enabled || !root?.isConnected) return;
+    if (root === document.body || root === document.documentElement) {
+      for (const child of root.children) schedule(child, conceal);
+      return;
+    }
+    if (root.nodeType === Node.ELEMENT_NODE && (root.tagName === 'HEAD' || root.closest(SKIP))) return;
     if (root.nodeType === Node.TEXT_NODE && !/[a-zA-Z]/.test(root.nodeValue || '')) return;
+    if (conceal && root.nodeType === Node.ELEMENT_NODE) maskableRoots.add(root);
     roots.add(root);
     requestScan();
   }
   function requestScan() {
-    if (!scanTimer) scanTimer = setTimeout(flushScans, 16);
+    if (scanQueued) return;
+    clearTimeout(scanTimer); scanTimer = 0;
+    scanQueued = true;
+    const generation = scanGeneration;
+    queueMicrotask(() => {
+      if (generation !== scanGeneration) return;
+      scanQueued = false;
+      flushScans();
+    });
   }
   function scheduleAttribute(el, name) {
     if (!settings.enabled || !el.isConnected) return;
@@ -948,20 +1008,24 @@ Halloween|万圣节
       // 沿祖先链查重，避免变动数量增加时出现两两比较。
       let parent = root.parentNode;
       while (parent && !batch.has(parent)) parent = parent.parentNode;
-      if (!parent && root.isConnected) scanTasks.push({ root, iterator: scan(root) });
+      if (!parent && root.isConnected) scanTasks.push({ root, iterator: scan(root), conceal:maskableRoots.has(root) });
+      maskableRoots.delete(root);
     }
     for (const [el, names] of attributeJobs) {
       scanTasks.push({ root: el, iterator: scanAttributes(el, names) });
     }
     attributeJobs.clear();
-    const end = performance.now() + 5;
+    const end = performance.now() + 4;
     let steps = 0;
-    while (scanTasks.length && steps++ < 240 && performance.now() < end) {
+    while (scanTasks.length && steps++ < 320 && performance.now() < end) {
       const task = scanTasks[scanTasks.length - 1];
-      if (!task.root.isConnected || task.iterator.next().done) scanTasks.pop();
+      let done = !task.root?.isConnected;
+      try { if (!done) done = task.iterator.next().done; } catch { done = true; }
+      if (done) { scanTasks.pop(); finishTask(task); }
     }
-    // 新弹窗优先于尚未完成的大列表；每批让出主线程，留出点击和绘制时间。
-    if (roots.size || attributeJobs.size || scanTasks.length) requestScan();
+    // 小菜单在当前微任务中完成；大块新增内容分批处理，局部遮罩有超时兜底。
+    for (const task of scanTasks) conceal(task);
+    if (roots.size || attributeJobs.size || scanTasks.length) scanTimer = setTimeout(flushScans, 0);
   }
   function* prune() {
     for (const [node, fields] of originals) {
@@ -991,6 +1055,8 @@ Halloween|万圣节
     epoch++;
     clearTimeout(timer);
     clearTimeout(scanTimer); scanTimer = 0;
+    scanGeneration++; scanQueued = false;
+    for (const root of [...pendingMasks.keys()]) reveal(root);
     clearTimeout(visibleTimer); visibleTimer = 0;
     roots.clear(); attributeJobs.clear(); scanTasks.length = 0;
     viewportObserver?.disconnect();
@@ -1007,7 +1073,7 @@ Halloween|万圣节
     Object.assign(settings, patch);
     write(KEY + '-settings', settings);
     refreshUI();
-    if (settings.enabled) schedule(document.body);
+    if (settings.enabled) schedule(document.body, true);
   }
   function enableOnline() {
     if (settings.online) { change({ online: false }); return; }
@@ -1043,12 +1109,20 @@ Halloween|万圣节
     ui.online.onclick = enableOnline;
     ui.bilingual.onclick = () => change({ bilingual: !settings.bilingual });
     ui.rescan.onclick = () => { resetWork(); schedule(document.body); refreshUI(); };
-    ui.clear.onclick = () => { resetWork(); clearTimeout(saveTimer); cache = Object.create(null); write(KEY + '-cache', {}); restore(); schedule(document.body); refreshUI(); };
+    ui.clear.onclick = () => { resetWork(); clearTimeout(saveTimer); cache = Object.create(null); write(KEY + '-cache', {}); restore(); schedule(document.body, true); refreshUI(); };
     document.body.append(host);
     refreshUI();
   }
   function start() {
-    panel();
+    function mount() {
+      installRevealStyle();
+      if (document.body && document.readyState !== 'loading') {
+        if (!host) panel();
+        else if (!host.isConnected) document.body.append(host);
+      }
+    }
+    mount();
+    document.addEventListener('DOMContentLoaded', mount, {once:true});
     viewportObserver = new IntersectionObserver(records => {
       for (const record of records) {
         if (record.isIntersecting) inView.add(record.target);
@@ -1057,6 +1131,7 @@ Halloween|万圣节
       scheduleVisible();
     });
     const observer = new MutationObserver(records => {
+      mount();
       if (!settings.enabled) return;
       for (const record of records) {
         if (record.type === 'characterData' || record.type === 'attributes') {
@@ -1067,14 +1142,14 @@ Halloween|万圣节
           else schedule(record.target);
         }
         else {
-          for (const node of record.addedNodes) schedule(node);
+          for (const node of record.addedNodes) schedule(node, true);
           if (record.removedNodes.length) needsPrune = true;
         }
       }
     });
-    observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true,
+    observer.observe(document, { subtree: true, childList: true, characterData: true, attributes: true,
       attributeFilter: [...ATTRS, 'href', 'hidden', 'aria-hidden', 'data-testid'] });
-    schedule(document.body);
+    schedule(document.body || document.documentElement, true);
     // 可见性由浏览器通知，只补译进入视口的文字，滚动不再遍历整页。
     setInterval(() => {
       if (needsPrune && settings.enabled) {
@@ -1083,22 +1158,25 @@ Halloween|万圣节
         requestScan();
       }
     }, 30000);
-    // SPA 路由切换可能只复用现有节点；定时检查路径，不修改网站的 history 方法。
-    let url = location.href;
-    setInterval(() => {
-      if (url !== location.href) {
-        url = location.href;
-        resetWork();
-        restore();
-        schedule(document.body);
+    // 保留已有中文和仍有效的在线任务；代码不接管网站的 history 方法。
+    let url = location.pathname + location.search;
+    function navigation() {
+      const next = location.pathname + location.search;
+      if (url !== next) {
+        url = next;
+        schedule(document.querySelector('main,[role="main"]') || document.body);
+        scheduleVisible();
       }
-    }, 1500);
+    }
+    window.addEventListener('popstate', navigation);
+    document.addEventListener('turbo:load', navigation);
+    document.addEventListener('pjax:end', navigation);
+    setInterval(navigation, 1500);
     if (typeof GM_registerMenuCommand === 'function') {
       GM_registerMenuCommand('中文 / 英文切换', () => change({ enabled: !settings.enabled }));
       GM_registerMenuCommand('开启 / 关闭名称和正文在线翻译', enableOnline);
       GM_registerMenuCommand('重新扫描 / 重试未译内容', () => { resetWork(); schedule(document.body); refreshUI(); });
     }
   }
-  if (document.body) start();
-  else document.addEventListener('DOMContentLoaded', start, { once: true });
+  start();
 })();
