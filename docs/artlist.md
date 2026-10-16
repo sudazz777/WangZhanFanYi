@@ -4,9 +4,20 @@
 
 ## 下载与安装
 
-### [⬇ 下载 Artlist 翻译 ZIP 安装包 v1.0.5](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/artlist-translation-v1.0.5.zip)
+### [⬇ 下载 Artlist 翻译 ZIP 安装包 v1.0.6](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/artlist-translation-v1.0.6.zip)
 
 压缩包内包含翻译脚本 `artlist-zh-CN.user.js` 和 `安装说明.txt`。
+
+## 脚本内检查更新
+
+首次请下载本页新版 ZIP 并导入一次，旧版没有更新入口。之后点击网站右下角 **中 / EN → 检查脚本更新**，或在篡改猴扩展菜单选择 **检查脚本更新**。发现新版后，点击“下载新版 ZIP 安装包”，解压导入并确认更新，刷新网页即可。手动检查不会自动安装。
+
+本版也已配置篡改猴原生更新地址。仓库现已公开，可在篡改猴管理面板使用“检查更新”，并按扩展设置定期检查；安装确认和自动更新频率由篡改猴控制。无需 GitHub 登录或令牌。检查只读取版本文件，不发送页面文字、输入内容或浏览 Cookie。网络不通或版本信息无效时会显示失败原因，也可回到仓库下载目录。
+
+## v1.0.6 更新
+
+- 新增助手面板与篡改猴菜单的“检查脚本更新”，显示当前版本、新版本及 ZIP 下载入口。
+- 配置原生更新元数据；检查失败可重试，校验脚本身份与数字版本，保留现有翻译和防闪现处理。
 
 ## v1.0.5 更新：减少英文闪现
 
