@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Artlist 简体中文助手（含歌曲界面）
 // @namespace    artlist-zh-cn-local
-// @version      1.0.2
+// @version      1.0.3
 // @description  翻译 Artlist 导航、音乐筛选、播放器和歌曲详情；可选在线翻译歌曲名及描述，保留英文原名。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*
@@ -32,6 +32,15 @@
   const pending = new Map();
   const queue = [];
   const failed = new Set();
+  const localCache = new Map();
+  const scanTasks = [];
+  const attributeJobs = new Map();
+  const waitingElements = new Map();
+  const inView = new Set();
+  let viewportObserver;
+  let scanTimer = 0;
+  let visibleTimer = 0;
+  let needsPrune = false;
   let timer = 0;
   let active = 0;
   let lastRequest = 0;
@@ -61,6 +70,11 @@
   const dictionary = `
 Royalty-Free Music|Royalty Free Music|免版税音乐
 Music|音乐
+Home|首页
+AI Tools|AI 工具
+Stock Catalog|素材库
+Studio|工作室
+Flows|工作流
 Sound Effects|音效
 SFX|音效
 Footage|视频素材
@@ -110,6 +124,7 @@ All Filters|全部筛选
 More Filters|更多筛选
 Clear Filters|清除筛选
 Clear All|全部清除
+Clear All Filters|清除全部筛选
 Clear|清除
 Reset|重置
 Apply|应用
@@ -450,6 +465,13 @@ Halloween|万圣节
   WORDS.set(normalize('Explore copyright-free music with music licensing that covers any kind of project, from social media to commercial use worldwide.'), '探索丰富的音乐素材，授权覆盖从社交媒体到全球商业用途的各类项目。');
 
   function local(text) {
+    if (localCache.has(text)) return localCache.get(text);
+    const result = lookupLocal(text);
+    if (localCache.size >= 3000) localCache.clear();
+    localCache.set(text, result);
+    return result;
+  }
+  function lookupLocal(text) {
     const key = normalize(text);
     if (WORDS.has(key)) return WORDS.get(key);
     const colon = key.match(/^(.*?):$/);
@@ -485,9 +507,6 @@ Halloween|万圣节
     return /\/royalty-free-music(\/|$)|\/music(\/|$)/.test(location.pathname) &&
       Boolean(el.closest('main,[role="main"]')) && !el.closest('a[href*="/pricing"],a[href*="/plan"]');
   }
-  function visible(el) {
-    return el.getClientRects().length > 0 && !el.closest('[hidden],[aria-hidden="true"]');
-  }
   function current(entry) { return entry.attr ? entry.node.getAttribute(entry.attr) : entry.node.nodeValue; }
   function connected(entry) { return entry.node.isConnected; }
   function put(entry, translated) {
@@ -512,32 +531,73 @@ Halloween|万圣节
     return entry;
   }
   function translate(node, attr = null) {
-    const el = attr ? node : node.parentElement;
-    if (!el || el.closest(attr ? SKIP : TEXT_SKIP) || (!attr && el.closest(ARTIST))) return;
     const value = attr ? node.getAttribute(attr) : node.nodeValue;
     if (!value || !/[a-zA-Z]/.test(value) || value.length > 1200) return;
-    const entry = entryFor(node, attr);
-    if (current(entry) === entry.output) return;
-    const text = entry.source.trim();
+    const previous = originals.get(node)?.get(attr || '');
+    if (previous?.output === value) return;
+    const text = value.trim();
+    const zh = local(text);
+    // 离线模式下不为不需要翻译的歌曲名、人名建立记录或查询祖先选择器。
+    if (!zh && !settings.online) return;
+    const el = attr ? node : node.parentElement;
+    if (!el || el.closest(attr ? SKIP : TEXT_SKIP) || (!attr && el.closest(ARTIST))) return;
     const isTitle = !attr && songTitle(el);
-    const zh = isTitle ? null : local(text);
-    if (zh) { put(entry, zh); return; }
-    if (!candidate(el, text, attr) || !visible(el)) return;
+    if (zh && !isTitle) { put(entryFor(node, attr), zh); return; }
+    if (!candidate(el, text, attr) || el.closest('[hidden],[aria-hidden="true"]')) return;
+    const entry = entryFor(node, attr);
+    if (failed.has(text) || Date.now() < pausedUntil) return;
+    if (pending.get(text)?.some(item => item.entry === entry)) return;
+    let entries = waitingElements.get(el);
+    if (!entries) {
+      entries = new Map();
+      waitingElements.set(el, entries);
+      viewportObserver.observe(el);
+    }
+    entries.set(entry, { entry, text, isTitle });
+    if (inView.has(el)) scheduleVisible();
+  }
+  function enqueueTranslation({ entry, text, isTitle }) {
+    if (!connected(entry) || current(entry) !== entry.source) return true;
+    if (failed.has(text) || Date.now() < pausedUntil) return true;
     const apply = result => {
       if (settings.online) put(entry, isTitle && settings.bilingual ? result + '（' + text + '）' : result);
     };
-    if (Object.hasOwn(cache, text)) { apply(cache[text]); return; }
-    if (failed.has(text) || Date.now() < pausedUntil) return;
+    if (Object.hasOwn(cache, text)) { apply(cache[text]); return true; }
     if (pending.has(text)) {
       const listeners = pending.get(text);
       if (!listeners.some(item => item.entry === entry)) listeners.push({ entry, apply });
-      return;
+      return true;
     }
-    // 每次只保留有限待办，滚动到新区域后再补译。
-    if (queue.length >= 160) return;
+    if (queue.length >= 160) return false;
     pending.set(text, [{ entry, apply }]);
     queue.push({ text, epoch });
     pump();
+    return true;
+  }
+  function scheduleVisible() {
+    if (!visibleTimer && settings.enabled && settings.online) visibleTimer = setTimeout(drainVisible, 16);
+  }
+  function drainVisible() {
+    visibleTimer = 0;
+    if (!settings.enabled || !settings.online) return;
+    const end = performance.now() + 5;
+    let steps = 0;
+    let blocked = false;
+    outer: for (const el of inView) {
+      const entries = waitingElements.get(el);
+      if (!el.isConnected || !entries || el.closest('[hidden],[aria-hidden="true"]')) {
+        viewportObserver.unobserve(el); waitingElements.delete(el); inView.delete(el);
+        continue;
+      }
+      for (const [entry, item] of entries) {
+        if (!enqueueTranslation(item)) { blocked = true; break outer; }
+        entries.delete(entry);
+        if (++steps >= 100 || performance.now() >= end) break outer;
+      }
+      viewportObserver.unobserve(el); waitingElements.delete(el); inView.delete(el);
+    }
+    // 队列满时由请求完成来唤醒，避免持续空转；缓存命中也分批写入。
+    if (inView.size && !blocked) scheduleVisible();
   }
 
   function request(text) {
@@ -596,6 +656,7 @@ Halloween|万圣节
     }).finally(() => {
       if (job.epoch === epoch) pending.delete(job.text);
       active = 0;
+      scheduleVisible();
       refreshUI();
       pump();
     });
@@ -605,7 +666,7 @@ Halloween|万圣节
     cache = Object.assign(Object.create(null), Object.fromEntries(entries));
     write(KEY + '-cache', cache);
   }
-  function scan(root) {
+  function* scan(root) {
     if (!settings.enabled || !root?.isConnected) return;
     if (root.nodeType === Node.TEXT_NODE) { translate(root); return; }
     if (root.nodeType !== Node.ELEMENT_NODE || root.closest(SKIP)) return;
@@ -613,6 +674,7 @@ Halloween|万圣节
       for (const name of ATTRS) if (el.hasAttribute(name)) translate(el, name);
     }
     attributes(root);
+    yield;
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         if (node.nodeType === Node.ELEMENT_NODE && node.matches(SKIP)) return NodeFilter.FILTER_REJECT;
@@ -623,28 +685,65 @@ Halloween|万圣节
     while ((node = walker.nextNode())) {
       if (node.nodeType === Node.TEXT_NODE) translate(node);
       else attributes(node);
+      yield;
     }
   }
   function schedule(root) {
-    if (!settings.enabled) return;
+    if (!settings.enabled || !root?.isConnected) return;
+    if (root.nodeType === Node.TEXT_NODE && !/[a-zA-Z]/.test(root.nodeValue || '')) return;
     roots.add(root);
-    if (schedule.id) return;
-    schedule.id = setTimeout(() => {
-      schedule.id = 0;
-      const list = [...roots]; roots.clear();
-      // 合并嵌套的变动，避免重复遍历一整个歌曲列表。
-      for (const root of list) {
-        if (!list.some(other => other !== root && other.contains?.(root))) scan(root);
-      }
-    }, 120);
+    requestScan();
   }
-  function prune() {
+  function requestScan() {
+    if (!scanTimer) scanTimer = setTimeout(flushScans, 16);
+  }
+  function scheduleAttribute(el, name) {
+    if (!settings.enabled || !el.isConnected) return;
+    let names = attributeJobs.get(el);
+    if (!names) { names = new Set(); attributeJobs.set(el, names); }
+    names.add(name);
+    requestScan();
+  }
+  function* scanAttributes(el, names) {
+    for (const name of names) { translate(el, name); yield; }
+  }
+  function flushScans() {
+    scanTimer = 0;
+    if (!settings.enabled) return;
+    const batch = new Set(roots); roots.clear();
+    for (const root of batch) {
+      // 沿祖先链查重，避免变动数量增加时出现两两比较。
+      let parent = root.parentNode;
+      while (parent && !batch.has(parent)) parent = parent.parentNode;
+      if (!parent && root.isConnected) scanTasks.push({ root, iterator: scan(root) });
+    }
+    for (const [el, names] of attributeJobs) {
+      scanTasks.push({ root: el, iterator: scanAttributes(el, names) });
+    }
+    attributeJobs.clear();
+    const end = performance.now() + 5;
+    let steps = 0;
+    while (scanTasks.length && steps++ < 240 && performance.now() < end) {
+      const task = scanTasks[scanTasks.length - 1];
+      if (!task.root.isConnected || task.iterator.next().done) scanTasks.pop();
+    }
+    // 新弹窗优先于尚未完成的大列表；每批让出主线程，留出点击和绘制时间。
+    if (roots.size || attributeJobs.size || scanTasks.length) requestScan();
+  }
+  function* prune() {
     for (const [node, fields] of originals) {
-      if (!node.isConnected) { originals.delete(node); continue; }
+      if (!node.isConnected) { originals.delete(node); yield; continue; }
       for (const [key, entry] of fields) {
         const value = current(entry);
         if (value !== entry.source && value !== entry.output) fields.delete(key);
       }
+      yield;
+    }
+    for (const el of waitingElements.keys()) {
+      if (!el.isConnected) {
+        viewportObserver.unobserve(el); waitingElements.delete(el); inView.delete(el);
+      }
+      yield;
     }
   }
   function restore() {
@@ -658,6 +757,11 @@ Halloween|万圣节
   function resetWork() {
     epoch++;
     clearTimeout(timer);
+    clearTimeout(scanTimer); scanTimer = 0;
+    clearTimeout(visibleTimer); visibleTimer = 0;
+    roots.clear(); attributeJobs.clear(); scanTasks.length = 0;
+    viewportObserver?.disconnect();
+    waitingElements.clear(); inView.clear();
     queue.length = 0;
     pending.clear();
     failed.clear();
@@ -712,29 +816,43 @@ Halloween|万圣节
   }
   function start() {
     panel();
-    const observer = new MutationObserver(records => {
+    viewportObserver = new IntersectionObserver(records => {
       for (const record of records) {
-        if (record.type === 'characterData') schedule(record.target);
-        else if (record.type === 'attributes') schedule(record.target);
+        if (record.isIntersecting) inView.add(record.target);
+        else inView.delete(record.target);
+      }
+      scheduleVisible();
+    });
+    const observer = new MutationObserver(records => {
+      if (!settings.enabled) return;
+      for (const record of records) {
+        if (record.type === 'characterData' || record.type === 'attributes') {
+          const entry = originals.get(record.target)?.get(record.attributeName || '');
+          // 忽略本脚本刚写回的译文，避免翻译引发下一轮翻译。
+          if (entry && current(entry) === entry.output) continue;
+          if (record.type === 'attributes' && ATTRS.includes(record.attributeName)) scheduleAttribute(record.target, record.attributeName);
+          else schedule(record.target);
+        }
         else {
           for (const node of record.addedNodes) schedule(node);
-          // 元素移动或文字拆分时也重新识别歌曲上下文。
-          if (record.target.nodeType === Node.ELEMENT_NODE) schedule(record.target);
+          if (record.removedNodes.length) needsPrune = true;
         }
       }
     });
     observer.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true,
-      attributeFilter: [...ATTRS, 'href', 'class', 'hidden', 'aria-hidden', 'data-testid'] });
+      attributeFilter: [...ATTRS, 'href', 'hidden', 'aria-hidden', 'data-testid'] });
     schedule(document.body);
-    let scrollTimer;
-    document.addEventListener('scroll', () => {
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => schedule(document.body), 350);
-    }, { passive: true, capture: true });
+    // 可见性由浏览器通知，只补译进入视口的文字，滚动不再遍历整页。
+    setInterval(() => {
+      if (needsPrune && settings.enabled) {
+        needsPrune = false;
+        scanTasks.push({ root: document.body, iterator: prune() });
+        requestScan();
+      }
+    }, 30000);
     // SPA 路由切换可能只复用现有节点；定时检查路径，不修改网站的 history 方法。
     let url = location.href;
     setInterval(() => {
-      prune();
       if (url !== location.href) {
         url = location.href;
         resetWork();

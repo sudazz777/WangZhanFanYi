@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 
 const script = fs.readFileSync(path.join(__dirname, '..', 'artlist-zh-CN.user.js'), 'utf8');
 const fixture = `<!doctype html><html><body>
-  <header><button id="login">Sign In</button></header>
+  <header><button id="login">Sign In</button><nav id="top-nav"><a>Home</a><a>AI Tools</a><a>Stock Catalog</a><a>Studio</a><a>Flows</a></nav></header>
   <main>
     <h1 id="hero">Get royalty-free music for your videos</h1>
     <button id="filter">Filters</button><span id="genre">Cinematic</span>
@@ -60,6 +60,7 @@ const fixture = `<!doctype html><html><body>
     await waitText('filter', '筛选');
     assert.equal(await text('genre'), '电影配乐');
     assert.equal(await text('login'), '登录');
+    assert.deepEqual(await page.locator('#top-nav a').allTextContents(), ['首页', 'AI 工具', '素材库', '工作室', '工作流']);
     assert.equal(await text('count'), '128 首歌曲');
     assert.equal(await page.locator('#play').getAttribute('aria-label'), '播放歌曲');
     assert.equal(await page.locator('#search').getAttribute('placeholder'), '搜索音乐');
@@ -83,7 +84,7 @@ const fixture = `<!doctype html><html><body>
       ['Retro', '复古'], ['Soul & RnB', '灵魂乐与节奏布鲁斯'], ['Worship', '敬拜音乐'],
       ['Time‑Lapse', '延时摄影'], ['  Soul\u00a0＆\u00a0RnB  ', '  灵魂乐与节奏布鲁斯  '],
       ['Claps&Snaps', '拍手与响指'], ['Lo‑Fi & Chill Beats', '低保真与休闲节拍'],
-      ['Clear', '清除'], ['Group', '多人合唱'], ['Acapella', '无伴奏人声'],
+      ['Clear', '清除'], ['Clear All Filters', '清除全部筛选'], ['Group', '多人合唱'], ['Acapella', '无伴奏人声'],
       ['Hide Downloaded', '隐藏已下载'], ['Includes Stems', '包含分轨'], ['Hide Downloaded Songs', '隐藏已下载歌曲'],
       ['< 30 sec', '少于30秒'], ['< 1 min', '少于1分钟'], ['< 1.5 min', '少于1.5分钟'],
       ['3+ min', '3分钟以上'], ['4+ min', '4分钟以上'],
@@ -159,6 +160,26 @@ const fixture = `<!doctype html><html><body>
     const sent = await page.evaluate(() => __requests);
     for (const secret of ['Never send my search', 'Never send my textarea', 'Never send my editor', 'Private billing data', 'secret', 'Invisible Secret']) assert(!sent.includes(secret), secret);
     console.log('PASS: 歌曲双语、描述翻译、保留人名、跳过私密字段、HTML 安全');
+
+    await page.evaluate(() => {
+      const below = document.createElement('a');
+      below.id = 'below-fold'; below.href = '/royalty-free-music/song/below/888';
+      below.textContent = 'Out of View'; below.style.cssText = 'display:block;margin-top:2500px';
+      document.body.append(below);
+      const style = document.createElement('style'); style.textContent = '.hidden-song{display:none}'; document.head.append(style);
+      const hidden = document.createElement('a'); hidden.id = 'class-hidden'; hidden.className = 'hidden-song';
+      hidden.href = '/royalty-free-music/song/hidden/889'; hidden.textContent = 'Visible Later';
+      document.querySelector('main').prepend(hidden);
+    });
+    await page.waitForTimeout(200);
+    assert(!(await page.evaluate(() => __requests)).includes('Out of View'));
+    assert(!(await page.evaluate(() => __requests)).includes('Visible Later'));
+    await page.locator('#below-fold').scrollIntoViewIfNeeded();
+    await waitText('below-fold', '译文：Out of View（Out of View）');
+    await page.evaluate(() => { document.querySelector('#class-hidden').className = ''; window.scrollTo(0, 0); });
+    await waitText('class-hidden', '译文：Visible Later（Visible Later）');
+    await page.evaluate(() => { document.querySelector('#below-fold').remove(); document.querySelector('#class-hidden').remove(); });
+    console.log('PASS: 只对可见歌曲请求翻译；滚动及 class 切换显示后自动补译');
 
     await page.evaluate(() => {
       const song = document.querySelector('#song');
