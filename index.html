@@ -36,12 +36,11 @@
           <div class="tags" aria-label="脚本功能"><span class="tag">简体中文界面</span><span class="tag">歌曲名可选双语</span><span class="tag">支持动态加载</span></div>
         </div>
         <div class="download-card" id="download">
-          <div class="card-top"><span class="file-icon" aria-hidden="true">{译}</span><span class="version">v1.0.0 · .user.js</span></div>
-          <h2>下载中文翻译脚本</h2>
-          <p class="file-name">artlist-zh-CN.user.js</p>
-          <a class="button primary" href="./artlist-zh-CN.user.js" download="artlist-zh-CN.user.js"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>下载脚本文件</a>
-          <a class="button secondary" href="./artlist-zh-CN.user.js" target="_blank" rel="noopener">尝试直接安装 ↗</a>
-          <p class="download-note">需要先安装 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey（篡改猴）</a>。<br>直接安装未弹出提示？下载后从篡改猴导入即可。</p>
+          <div class="card-top"><span class="file-icon" aria-hidden="true">ZIP</span><span class="version">v1.0.0 · .zip</span></div>
+          <h2>下载中文助手安装包</h2>
+          <p class="file-name">artlist-zh-CN-v1.0.0.zip</p>
+          <a class="button primary" href="./downloads/artlist-zh-CN-v1.0.0.zip" download="artlist-zh-CN-v1.0.0.zip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg>下载 ZIP 安装包</a>
+          <p class="download-note">内含翻译脚本与安装说明。先安装 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey（篡改猴）</a>，解压后将 .user.js 文件导入扩展。</p>
         </div>
       </section>
 
@@ -65,7 +64,7 @@
         <div><span class="section-label">GET STARTED</span><h2 id="install-title">三步，开始用中文找歌。</h2><p class="guide-intro">适用于桌面版 Chrome、Edge 和 Firefox。</p></div>
         <ol class="steps">
           <li><div><strong>安装篡改猴扩展</strong><p>访问 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey 官网</a>，选择你的浏览器并安装扩展。按扩展提示启用用户脚本权限。</p></div></li>
-          <li><div><strong>下载并导入脚本</strong><p>点击上方“下载脚本文件”，在篡改猴的“管理面板 → 实用工具 → 从文件导入”中选择下载的 .user.js 文件，并确认安装。也可以新建脚本，粘贴全部代码后保存。</p></div></li>
+          <li><div><strong>解压安装包并导入脚本</strong><p>点击上方“下载 ZIP 安装包”并解压，在篡改猴的“管理面板 → 实用工具 → 从文件导入”中选择解压得到的 .user.js 文件，并确认安装。</p></div></li>
           <li><div><strong>打开 Artlist，开启中文体验</strong><p>刷新 <a href="https://artlist.io/royalty-free-music" target="_blank" rel="noopener noreferrer">Artlist 音乐页面</a>。常用界面自动翻译；要翻译歌曲名和描述，点击右下角“中 / EN”菜单，选择“开启歌曲名在线翻译”。</p></div></li>
         </ol>
       </section>
@@ -75,12 +74,12 @@
         <div>
           <details open><summary>歌曲名称也能翻译吗？</summary><p>可以。开启在线翻译后，会补译可识别的歌曲名称和音乐描述，默认显示“中文（English）”，也可切换为仅中文。音乐人姓名尽量保留原文。这里翻译的是页面文字，不是音频或演唱内容。</p></details>
           <details><summary>翻译需要联网吗？</summary><p>常用界面使用内置词库，无需连接翻译服务。歌曲名和描述的在线补译会将符合条件的页面文字发送至 Google，需要能访问 <code>translate.googleapis.com</code>。在线翻译默认关闭，接口连接失败时本地词库仍可使用。</p></details>
-          <details><summary>如何切换回英文或处理未译内容？</summary><p>点击页面右下角的“中 / EN”菜单，选择“显示英文原文”。网络恢复后，可点击“重新扫描 / 重试未译内容”。下载按钮如果打开了代码页面，也可以将完整代码复制到篡改猴的新建脚本中保存。</p></details>
+          <details><summary>如何切换回英文或处理未译内容？</summary><p>点击页面右下角的“中 / EN”菜单，选择“显示英文原文”。网络恢复后，可点击“重新扫描 / 重试未译内容”。</p></details>
           <details><summary>支持所有 Artlist 页面吗？</summary><p>脚本面向常用界面和音乐页面，已经通过本地模拟浏览器测试，尚未在真实登录后的 Artlist 页面完整验证。网站结构变化可能影响识别，无法保证每处文字都覆盖。授权、价格和条款请以 Artlist 原文为准。<a href="./README.md">查看完整说明</a>。</p></details>
         </div>
       </section>
     </main>
-    <footer><p>Artlist 中文助手 · 独立制作的浏览器脚本，与 Artlist 官方无关联。</p><a href="./artlist-zh-CN.user.js" download="artlist-zh-CN.user.js">下载 v1.0.0 ↓</a></footer>
+    <footer><p>Artlist 中文助手 · 独立制作的浏览器脚本，与 Artlist 官方无关联。</p><a href="./downloads/artlist-zh-CN-v1.0.0.zip" download="artlist-zh-CN-v1.0.0.zip">下载 ZIP · v1.0.0 ↓</a></footer>
   </div>
 </body>
 </html>
