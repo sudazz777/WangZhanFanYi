@@ -26,3 +26,14 @@ node test/browser.test.cjs
 ```
 
 功能回归覆盖顶部导航、筛选弹窗、展示属性、歌曲节点复用、原文恢复、缓存、失败重试，以及歌曲滚入视口和仅通过 class 变化显示时的补译。测试使用本地页面和模拟翻译响应，未在登录后的真实 Artlist 页面测量；结果不代表网站本身和网络请求的耗时。
+
+## Musicbed 验证
+
+Musicbed 独立脚本使用相同的增量处理方式，可执行：
+
+```sh
+node test/musicbed.test.cjs
+node test/performance.test.cjs musicbed-zh-CN.user.js
+```
+
+Musicbed 的 1,800 行模拟列表中，连续展开筛选只遍历新增弹窗的 40 个后代节点，主列表重扫为 0 次；离线模式滚动遍历为 0 个节点。功能测试额外验证 Musicbed 的歌曲和音效路径、以歌搜歌、音乐特征、调性、BPM、音乐人保护及独立缓存。

@@ -6,13 +6,15 @@ const assert = require('node:assert/strict');
 
 const baseline = process.argv.includes('--baseline');
 const scriptPath = process.argv.find(arg => arg.endsWith('.user.js')) || path.join(__dirname, '..', 'artlist-zh-CN.user.js');
+const musicbed = /musicbed/i.test(path.basename(scriptPath));
+const origin = musicbed ? 'https://www.musicbed.com' : 'https://artlist.io';
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage();
     const rows = Array.from({ length: 1800 }, (_, i) => `<div><span>Track ${i}</span><span>Artist ${i}</span><button>Play</button></div>`).join('');
-    await page.route('https://artlist.io/**', route => route.fulfill({ contentType: 'text/html', body: `<header><button id="open">Filters</button></header><main>${rows}</main>` }));
-    await page.goto('https://artlist.io/royalty-free-music');
+    await page.route(origin + '/**', route => route.fulfill({ contentType: 'text/html', body: `<header><button id="open">Filters</button></header><main>${rows}</main>` }));
+    await page.goto(origin + (musicbed ? '/songs' : '/royalty-free-music'));
     await page.evaluate(() => {
       window.GM_getValue = (_, fallback) => fallback;
       window.GM_setValue = () => {};
@@ -62,6 +64,6 @@ const scriptPath = process.argv.find(arg => arg.endsWith('.user.js')) || path.jo
       assert(clicks.nodes < 1000, '仅处理新弹窗，应与列表长度无关');
       assert.equal(scrolling.nodes, 0, '离线翻译不应在滚动时重扫整页');
     }
-    console.log(JSON.stringify({ mode: baseline ? 'baseline' : 'optimized', rows: 1800, initial, clicks, scrolling }));
+    console.log(JSON.stringify({ site: musicbed ? 'Musicbed' : 'Artlist', mode: baseline ? 'baseline' : 'optimized', rows: 1800, initial, clicks, scrolling }));
   } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });
