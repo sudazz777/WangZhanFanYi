@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | **Artlist 翻译** | 导航、音乐筛选和播放器中文化；可选歌曲名双语显示 | v1.0.4 | [⬇ 下载 ZIP 安装包](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/artlist-translation-v1.0.4.zip) |
 | **Musicbed 翻译** | 歌曲与音效筛选、播放器和授权入口中文化；可选名称双语及公开正文补译 | v1.0.0 | [⬇ 下载 ZIP 安装包](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/musicbed-translation-v1.0.0.zip) |
-| **GitHub 翻译** | 仓库、议题、拉取请求和设置界面中文化；保护代码，正文可选中后手动补译 | v1.0.1 | [⬇ 下载 ZIP 安装包](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/github-translation-v1.0.1.zip) |
+| **GitHub 翻译** | 仓库与二级设置菜单、选项和描述中文化；保护代码，正文可选中后手动补译 | v1.1.0 | [⬇ 下载 ZIP 安装包](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/github-translation-v1.1.0.zip) |
 
 [Artlist 翻译使用说明](./docs/artlist.md) · [Musicbed 翻译使用说明](./docs/musicbed.md) · [GitHub 翻译使用说明](./docs/github.md)
 

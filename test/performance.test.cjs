@@ -15,7 +15,7 @@ const origin = github ? 'https://github.com' : musicbed ? 'https://www.musicbed.
     const page = await browser.newPage();
     const rows = Array.from({ length: 1800 }, (_, i) => `<div><span>Track ${i}</span><span>Artist ${i}</span><button>${github ? 'Code' : 'Play'}</button></div>`).join('');
     await page.route(origin + '/**', route => route.fulfill({ contentType: 'text/html', body: `<header><button id="open">Filters</button></header><main>${rows}</main>` }));
-    await page.goto(origin + (github ? '/owner/repo' : musicbed ? '/songs' : '/royalty-free-music'));
+    await page.goto(origin + (github ? '/owner/repo' + (process.argv.includes('--settings') ? '/settings' : '') : musicbed ? '/songs' : '/royalty-free-music'));
     await page.evaluate(() => {
       window.GM_getValue = (_, fallback) => fallback;
       window.GM_setValue = () => {};

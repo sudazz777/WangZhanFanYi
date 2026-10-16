@@ -1,0 +1,10 @@
+{
+  "project": "https://github.com/maboloshi/github-chinese",
+  "commit": "2cb5d3997d7b6dfd98e345a43011645a390fa367",
+  "source": "https://github.com/maboloshi/github-chinese/blob/2cb5d3997d7b6dfd98e345a43011645a390fa367/locals.js",
+  "sha256": "45a3f1c0e8d61f8f63be9b7130f48ad7aaa7d28f4a0d30001ac38645c7ad09ae",
+  "license": "GPL-3.0-or-later",
+  "groups": 117,
+  "literal_entries": 7238,
+  "scope": "Static settings dictionaries and their literal dependencies; no upstream code or regex execution"
+}
