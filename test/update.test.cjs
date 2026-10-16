@@ -8,8 +8,9 @@ const root = path.join(__dirname, '..');
   const browser = await chromium.launch({headless:true, executablePath:'/usr/bin/chromium', args:['--no-sandbox']});
   try {
     for (const site of ['artlist','musicbed','github']) {
-      const script = fs.readFileSync(path.join(root, site+'-zh-CN.user.js'), 'utf8');
-      const meta = fs.readFileSync(path.join(root, 'updates', site+'.meta.js'), 'utf8');
+      const bundled = process.argv.includes('--bundle');
+      const script = fs.readFileSync(path.join(root, (bundled?'websites':site)+'-zh-CN.user.js'), 'utf8');
+      const meta = fs.readFileSync(path.join(root, 'updates', (bundled?'websites':site)+'.meta.js'), 'utf8');
       const config = JSON.parse(script.match(/const SCRIPT_UPDATE = (.*);/)[1]);
       assert.equal(meta.trim(), script.slice(0,script.indexOf('// ==/UserScript==')+18).trim());
       assert.equal(meta.match(/@updateURL\s+(\S+)/)[1], config.metaUrl);
@@ -20,7 +21,7 @@ const root = path.join(__dirname, '..');
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       await page.route('**/*', route => route.fulfill({contentType:'text/html',body:'<html><body><button>Settings</button><input value="private input"><p>Private page contents</p></body></html>'}));
-      await page.goto(site==='github'?'https://github.com/example/repo/settings':`https://www.${site}.com/`);
+      await page.goto(site==='github'?'https://github.com/example/repo/settings':site==='artlist'?'https://artlist.io/royalty-free-music':'https://www.musicbed.com/');
       await page.evaluate(() => {
         window.__menus = []; window.__calls = []; window.__store = {};
         window.GM_getValue = (k,d) => __store[k] ?? d;
@@ -50,7 +51,7 @@ const root = path.join(__dirname, '..');
       await start(); await respond(versionMeta('1.10.0'));
       assert.match(await status(),/发现新版 v1.10.0/);
       const download = panel.locator('#update-download');
-      assert.equal(await download.getAttribute('href'),config.downloadBase+site+'-translation-v1.10.0.zip');
+      assert.equal(await download.getAttribute('href'),config.downloadBase+config.id+'-translation-v1.10.0.zip');
       await start(); assert.equal(await download.getAttribute('href'),null);
       await respond(versionMeta('0.9')); assert.match(await status(),/无需降级/);
       for (const code of [401,403,404,500]) {
@@ -63,7 +64,7 @@ const root = path.join(__dirname, '..');
       }
       // Remote download URLs are ignored; only trusted locally constructed ZIP links are offered.
       await start(); await respond(versionMeta('9.0').replace(/(@downloadURL\s+)\S+/, '$1https://attacker.example/evil.js'));
-      assert.equal(await download.getAttribute('href'),config.downloadBase+site+'-translation-v9.0.zip');
+      assert.equal(await download.getAttribute('href'),config.downloadBase+config.id+'-translation-v9.0.zip');
       for (const [event,message] of [['onerror',/无法连接/],['ontimeout',/超时/],['onabort',/已取消/]]) {
         await start(); await respond('',0,event); assert.match(await status(),message);
         await respond(versionMeta('99.0')); assert.match(await status(),message);

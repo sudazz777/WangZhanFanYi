@@ -4,7 +4,7 @@ const path = require('node:path');
 const assert = require('node:assert/strict');
 const baseline = process.argv.includes('--baseline');
 const scriptPath = process.argv.find(arg=>arg.endsWith('.user.js')) || path.join(__dirname,'..','artlist-zh-CN.user.js');
-const site = /musicbed/i.test(path.basename(scriptPath)) ? 'musicbed' : 'artlist';
+const site = process.argv.includes('--musicbed') || /musicbed/i.test(path.basename(scriptPath)) ? 'musicbed' : 'artlist';
 const origin = site==='musicbed' ? 'https://www.musicbed.com' : 'https://artlist.io';
 const routePath = site==='musicbed' ? '/songs' : '/royalty-free-music';
 const songPath = site==='musicbed' ? '/songs/' : '/royalty-free-music/song/';
@@ -16,7 +16,7 @@ const fixture = `<!doctype html><meta charset="utf-8"><header><button id="stable
 <aside data-testid="music-player"><a id="cached" href="${songPath}morning-light/124">Morning Light</a></aside>
 <input id="private" value="Never send my search"><script>
 window.__startup=[];
-function sample(){const el=document.querySelector('#initial');const song=document.querySelector('#cached');if(el&&song)__startup.push({text:el.textContent,song:song.textContent,visible:getComputedStyle(el).visibility!=='hidden'});if(__startup.length<4)requestAnimationFrame(sample);}
+function sample(){const el=document.querySelector('#initial');const song=document.querySelector('#cached');if(el&&song)__startup.push({text:el.textContent,song:song.textContent,visible:getComputedStyle(el).visibility!=='hidden',songVisible:getComputedStyle(song).visibility!=='hidden'});if(__startup.length<4)requestAnimationFrame(sample);}
 requestAnimationFrame(sample);
 </script>`;
 (async()=>{
@@ -52,7 +52,7 @@ requestAnimationFrame(sample);
       queueMicrotask(()=>queueMicrotask(()=>resolve({stable:document.querySelector('#stable').textContent,next:document.querySelector('#next').textContent})));
     })),{i,routePath}));
     await page.waitForTimeout(1700);
-    const metrics={site,mode:baseline?'baseline':'optimized',startupEnglishFrames:startup.filter(s=>s.visible&&s.text==='Play').length,cachedTitleOriginalFrames:startup.filter(s=>s.song==='Morning Light').length,dynamicEnglishBeforePaint:changes.filter(s=>s.visible&&/[a-z]/i.test(s.text)).length,navigationEnglishBeforePaint:navigation.filter(s=>s.stable==='Filters'||s.next==='Download').length,persistentNavigationEnglishWrites:await page.evaluate(()=>__navEnglishWrites)};
+    const metrics={site,mode:baseline?'baseline':'optimized',startupEnglishFrames:startup.filter(s=>s.visible&&s.text==='Play').length,cachedTitleOriginalFrames:startup.filter(s=>s.songVisible&&s.song==='Morning Light').length,dynamicEnglishBeforePaint:changes.filter(s=>s.visible&&/[a-z]/i.test(s.text)).length,navigationEnglishBeforePaint:navigation.filter(s=>s.stable==='Filters'||s.next==='Download').length,persistentNavigationEnglishWrites:await page.evaluate(()=>__navEnglishWrites)};
     console.log(JSON.stringify(metrics));
     if(baseline)return;
     for(const [name,value] of Object.entries(metrics))if(typeof value==='number')assert.equal(value,0,name);

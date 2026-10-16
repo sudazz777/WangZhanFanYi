@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 
-const script = fs.readFileSync(path.join(__dirname, '..', 'musicbed-zh-CN.user.js'), 'utf8');
+const script = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'musicbed-zh-CN.user.js'), 'utf8');
 const fixture = `<!doctype html><html><body>
   <header><button id="login">Sign In</button><nav id="top-nav"><a>Songs</a><a>Sounds</a><a>Playlists</a><a>Services</a><a>Create free account</a></nav></header>
   <main>

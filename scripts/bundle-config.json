@@ -1,0 +1,12 @@
+{
+  "name": "网站翻译",
+  "namespace": "wangzhanfanyi-zh-cn",
+  "version": "1.0.0",
+  "id": "websites",
+  "filename": "websites-zh-CN.user.js",
+  "sites": [
+    {"id": "artlist", "name": "Artlist", "hosts": ["artlist.io", "www.artlist.io"]},
+    {"id": "musicbed", "name": "Musicbed", "hosts": ["musicbed.com", "www.musicbed.com"]},
+    {"id": "github", "name": "GitHub", "hosts": ["github.com"]}
+  ]
+}

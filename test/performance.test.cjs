@@ -6,8 +6,8 @@ const assert = require('node:assert/strict');
 
 const baseline = process.argv.includes('--baseline');
 const scriptPath = process.argv.find(arg => arg.endsWith('.user.js')) || path.join(__dirname, '..', 'artlist-zh-CN.user.js');
-const musicbed = /musicbed/i.test(path.basename(scriptPath));
-const github = /github/i.test(path.basename(scriptPath));
+const musicbed = process.argv.includes('--musicbed') || /musicbed/i.test(path.basename(scriptPath));
+const github = process.argv.includes('--github') || /github/i.test(path.basename(scriptPath));
 const origin = github ? 'https://github.com' : musicbed ? 'https://www.musicbed.com' : 'https://artlist.io';
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] });
