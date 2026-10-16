@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Artlist 简体中文助手（含歌曲界面）
 // @namespace    artlist-zh-cn-local
-// @version      1.0.0
+// @version      1.0.1
 // @description  翻译 Artlist 导航、音乐筛选、播放器和歌曲详情；可选在线翻译歌曲名及描述，保留英文原名。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*
@@ -57,7 +57,7 @@
 
   // 一行可列出多个等价英文；仅匹配完整文本，不在歌曲名中替换单词。
   const WORDS = new Map();
-  function normalize(s) { return s.replace(/[’‘]/g, "'").replace(/[–—]/g, '-').replace(/\s+/g, ' ').trim().toLowerCase(); }
+  function normalize(s) { return s.normalize('NFKC').replace(/[’‘]/g, "'").replace(/[‐‑‒–—−]/g, '-').replace(/\s*&\s*/g, ' & ').replace(/\s+/g, ' ').trim().toLowerCase(); }
   const dictionary = `
 Royalty-Free Music|Royalty Free Music|免版税音乐
 Music|音乐
@@ -277,6 +277,7 @@ Country|乡村
 Electronic|电子
 Experimental|实验音乐
 Folk|民谣
+Fantasy|奇幻
 Funk|放克
 Hip Hop|Hip-Hop|嘻哈
 Holiday|节日
@@ -284,6 +285,7 @@ Indie|独立音乐
 Jazz|爵士
 Latin|拉丁
 Lo-Fi|Lofi|低保真
+Lofi & Chill Beats|Lo-Fi & Chill Beats|Lo Fi & Chill Beats|Lofi and Chill Beats|低保真与休闲节拍
 Lounge|休闲沙龙
 Orchestral|管弦乐
 Pop|流行
@@ -292,6 +294,9 @@ Reggae|雷鬼
 Rock|摇滚
 Singer-Songwriter|唱作人
 Soul|灵魂乐
+Soul & RnB|Soul & R&B|Soul and RnB|灵魂乐与节奏布鲁斯
+Retro|复古
+Worship|敬拜音乐
 World|世界音乐
 Dance|舞曲
 Disco|迪斯科
@@ -317,6 +322,16 @@ Cello|大提琴
 Bass|贝斯
 Double Bass|低音提琴
 Drums|鼓
+Acoustic Drums|原声鼓
+Electronic Drums|电子鼓
+Backing Vocals|和声
+Claps & Snaps|Claps and Snaps|拍手与响指
+Ethnic|民族乐器
+Mandolin & Ukulele|Mandolin and Ukulele|曼陀林与尤克里里
+Orchestra|管弦乐队
+Pads|铺底音色
+Special Wind Instruments|特殊管乐器
+Whistle|Whistling|口哨
 Percussion|打击乐
 Brass|铜管
 Trumpet|小号
@@ -355,6 +370,8 @@ Angry|愤怒
 Aggressive|激烈
 Powerful|强劲
 Energetic|活力
+Exciting|激动人心
+Love|爱意
 Playful|俏皮
 Funny|诙谐
 Fun|有趣
@@ -377,8 +394,9 @@ Fashion|时尚
 Lifestyle|生活方式
 Sport|Sports|运动
 Fitness|健身
+Sport & Fitness|Sports & Fitness|Sport and Fitness|运动与健身
 Food|美食
-Wedding|婚礼
+Wedding|Weddings|婚礼
 Documentary|纪录片
 Vlog|Vlogs|视频博客
 Business & Corporate|商务与企业
@@ -393,7 +411,15 @@ Social Media|社交媒体
 Podcast|Podcasts|播客
 Real Estate|房地产
 Slow Motion|慢动作
-Time Lapse|Timelapse|延时摄影
+Time Lapse|Time-Lapse|Timelapse|延时摄影
+Drone Shots|Drone Shot|航拍
+Industry|工业
+Intros & Logos|Intros and Logos|片头与标志
+Landscape|Landscapes|风景
+Medical|医疗
+Party|派对
+Science|科学
+Shorts|短视频
 Animation|动画
 Urban|都市
 Road Trip|公路旅行

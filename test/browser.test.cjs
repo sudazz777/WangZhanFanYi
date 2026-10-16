@@ -71,6 +71,44 @@ const fixture = `<!doctype html><html><body>
     assert.equal(await page.evaluate(() => __requests.length), 0);
     console.log('PASS: 本地词库、输入框占位符、输入值保护和歌曲名保留');
 
+    // 根据用户提供的四张筛选截图重现漏译项，模拟展开后才挂载的弹窗。
+    const filterLabels = [
+      ['Drone Shots', '航拍'], ['Industry', '工业'], ['Intros & Logos', '片头与标志'],
+      ['Landscape', '风景'], ['Medical', '医疗'], ['Party', '派对'], ['Science', '科学'],
+      ['Sport & Fitness', '运动与健身'], ['Time-Lapse', '延时摄影'], ['Weddings', '婚礼'], ['Shorts', '短视频'],
+      ['Acoustic Drums', '原声鼓'], ['Backing Vocals', '和声'], ['Claps & Snaps', '拍手与响指'],
+      ['Electronic Drums', '电子鼓'], ['Ethnic', '民族乐器'], ['Mandolin & Ukulele', '曼陀林与尤克里里'],
+      ['Orchestra', '管弦乐队'], ['Pads', '铺底音色'], ['Special Wind Instruments', '特殊管乐器'], ['Whistle', '口哨'],
+      ['Exciting', '激动人心'], ['Love', '爱意'], ['Fantasy', '奇幻'], ['Lofi & Chill Beats', '低保真与休闲节拍'],
+      ['Retro', '复古'], ['Soul & RnB', '灵魂乐与节奏布鲁斯'], ['Worship', '敬拜音乐'],
+      ['Time‑Lapse', '延时摄影'], ['  Soul\u00a0＆\u00a0RnB  ', '  灵魂乐与节奏布鲁斯  '],
+      ['Claps&Snaps', '拍手与响指'], ['Lo‑Fi & Chill Beats', '低保真与休闲节拍'],
+    ];
+    await page.evaluate(labels => {
+      const popup = document.createElement('div');
+      popup.id = 'filter-popup'; popup.setAttribute('role', 'dialog');
+      for (const [en] of labels) {
+        const chip = document.createElement('button');
+        chip.textContent = en; chip.setAttribute('aria-label', en); popup.append(chip);
+      }
+      // 网站的弹出层可以在 main 之外，本地词库也应覆盖。
+      document.body.append(popup);
+    }, filterLabels);
+    await page.waitForFunction(labels => {
+      const chips = [...document.querySelectorAll('#filter-popup button')];
+      return chips.every((chip, i) => chip.textContent === labels[i][1] && chip.getAttribute('aria-label') === labels[i][1]);
+    }, filterLabels);
+    assert.equal(await page.evaluate(() => __requests.length), 0);
+    await click('toggle');
+    assert.deepEqual(await page.locator('#filter-popup button').allTextContents(), filterLabels.map(([en]) => en));
+    await click('toggle');
+    await page.waitForFunction(() => document.querySelector('#filter-popup button').textContent === '航拍');
+    // 复用同一按钮来展示另一个筛选项，也应重新翻译。
+    await page.evaluate(() => { document.querySelector('#filter-popup button').firstChild.nodeValue = 'Worship'; });
+    await page.waitForFunction(() => document.querySelector('#filter-popup button').textContent === '敬拜音乐');
+    await page.evaluate(() => document.querySelector('#filter-popup').remove());
+    console.log('PASS: 截图中 28 个漏译项、连字符及空格变体、弹窗动态挂载、原文恢复和筛选节点复用');
+
     await page.evaluate(() => {
       const row = document.createElement('button'); row.id = 'dynamic'; row.textContent = 'Download'; document.querySelector('main').append(row);
       document.querySelector('#play').firstChild.nodeValue = 'Pause';
