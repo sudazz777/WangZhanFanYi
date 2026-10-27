@@ -4,7 +4,7 @@ GitHub 常用界面的简体中文翻译脚本，适用于桌面版 Chrome、Edg
 
 ## 下载与安装
 
-### [网站翻译 · v1.1.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.0.zip)
+### [网站翻译 · v1.1.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.1.zip)
 
 压缩包包含一个 `websites-zh-CN.user.js`、安装说明与 `GPL-3.0.txt`，支持 Artlist、Musicbed、GitHub 和 MiniMax Audio。
 

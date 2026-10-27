@@ -3,9 +3,12 @@
   'use strict';
   const KEY = 'minimax-zh-v1';
   const ATTRS = ['placeholder', 'title', 'aria-label', 'alt', 'data-placeholder', 'label'];
-  const SKIP = 'script,style,noscript,code,pre,kbd,svg,canvas,iframe,textarea,input,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],.ProseMirror,.tiptap,.cm-editor,.monaco-editor,[data-slate-editor],[data-lexical-editor],[translate="no"],[data-private],[data-sensitive],[data-minimax-zh]';
+  // Global opt-out flags disable browser translators; they must not disable this
+  // explicitly installed UI translator. Keep local content opt-outs respected.
+  const NO_TRANSLATE = '[translate="no" i]:not(html,body,main,#root,#__next,#app,[data-reactroot])';
+  const SKIP = 'script,style,noscript,code,pre,kbd,svg,canvas,iframe,textarea,input,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],.ProseMirror,.tiptap,.cm-editor,.monaco-editor,[data-slate-editor],[data-lexical-editor],'+NO_TRANSLATE+',[data-private],[data-sensitive],[data-minimax-zh]';
   // Attributes such as placeholder can be translated without touching editable text or values.
-  const ATTR_SKIP = 'script,style,noscript,svg,canvas,iframe,code,pre,[translate="no"],[data-private],[data-sensitive],[data-minimax-zh]';
+  const ATTR_SKIP = 'script,style,noscript,svg,canvas,iframe,code,pre,'+NO_TRANSLATE+',[data-private],[data-sensitive],[data-minimax-zh]';
   const CONTENT = '[data-user-content],[data-generated-content],[data-voice-name],[data-song-name],[data-testid="voice-name"],[data-testid="work-title"],[data-testid="generated-text"],[data-testid="lyrics-content"],.voice-name,.song-name,.file-name,.filename,.generated-content,.generated-text,.lyrics-content,.prompt-content,.user-content';
   const INLINE_BLOCK = 'p,label,h1,h2,h3,[role="alert"],.ant-form-item-explain,.ant-form-item-extra';
   const originals = new Map();
@@ -21,6 +24,13 @@
   for (const line of `
 MiniMax Audio&Music|MiniMax 音频与音乐
 Audio|音频
+Video|视频
+Tutorial|教程
+Light|浅色
+Dark|深色
+Light Mode|浅色模式
+Dark Mode|深色模式
+Switch Theme|切换主题
 Home|首页
 Voice Library|音色库
 Voices|音色
@@ -181,6 +191,14 @@ Tell a Story|讲故事
 Create a Commercial|制作广告
 Build an AI Tutor|创建 AI 导师
 Explore voices to match your need|探索适合你的音色
+Whisper to Sleep|耳语助眠
+A Tale of Terror|恐怖故事
+Goblin Bargain|地精的交易
+Lecture Mode: On|开启授课模式
+Pitch the Vision|讲述你的愿景
+Get Sci-fied|走进科幻世界
+Lifelike Vocals,Immersive Spatial Sound, Refined Arrangement|逼真人声、沉浸式空间音效与精细编曲
+Perfecting Tonal Nuances. Maximizing Timbre Similarity.|细腻展现语调变化，提升音色相似度。
 Discover music to match your project|发现适合项目的音乐
 Audio Tools|音频工具
 Original Audio|原始音频
@@ -527,7 +545,11 @@ No results|暂无结果
     }
     originals.clear();
   }
-  function refreshUI() {if(ui) ui.toggle.textContent=settings.enabled?'显示英文原文':'恢复中文翻译';}
+  function refreshUI() {
+    if(!ui)return;
+    ui.toggle.textContent=settings.enabled?'显示英文原文':'恢复中文翻译';
+    ui.status.textContent=settings.enabled?'本地界面翻译 · 输入与生成内容保留原文':'已显示英文原文 · 点击“恢复中文翻译”重新启用';
+  }
   function toggle() {
     renderCore.reset(); restore(); settings.enabled=!settings.enabled;
     try {GM_setValue(KEY+'-settings',settings);} catch { /* Keep this page usable without storage. */ }
@@ -538,7 +560,7 @@ No results|暂无结果
     host.style.cssText='position:fixed;right:16px;bottom:24px;z-index:2147483647';
     const shadow=host.attachShadow({mode:'open'});
     shadow.innerHTML=`<style>:host{all:initial;font:13px/1.6 system-ui,"Microsoft YaHei",sans-serif;color:#f5f5f5}details{width:270px;max-height:75vh;overflow:auto;background:#202124;border:1px solid #62656b;border-radius:12px;box-shadow:0 4px 20px #0005}details:not([open]){width:auto}summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:600}.body{padding:0 12px 12px}button{display:block;width:100%;margin-top:7px;padding:7px;border:1px solid #6c7077;border-radius:6px;background:#303238;color:#fff;cursor:pointer;font:inherit;text-align:left}p{font-size:12px;color:#d1d5db;margin:4px 0}button:disabled{opacity:.6;cursor:wait}@media(max-width:480px){details{width:245px}}</style><details><summary>中 / EN · 网站翻译（MiniMax Audio）</summary><div class="body"><p>本地界面翻译 · 输入与生成内容保留原文</p><button id="toggle"></button><button id="rescan">重新扫描界面</button></div></details>`;
-    ui={toggle:shadow.getElementById('toggle')};ui.toggle.onclick=toggle;
+    ui={toggle:shadow.getElementById('toggle'),status:shadow.querySelector('.body > p')};ui.toggle.onclick=toggle;
     shadow.getElementById('rescan').onclick=()=>{renderCore.reset();schedule(document.body,true);};
     mountScriptUpdate();document.body.append(host);refreshUI();
   }

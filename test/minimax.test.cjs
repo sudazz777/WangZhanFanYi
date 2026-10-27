@@ -1,6 +1,6 @@
 const {chromium}=require('playwright');const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
 const script=fs.readFileSync(path.join(__dirname,'..','websites-zh-CN.user.js'),'utf8');
-const fixture=`<!doctype html><meta charset="utf-8"><header><button id="home">Home</button><button>Sign In</button></header><main>
+const fixture=`<!doctype html><html lang="en" translate="no"><head><meta charset="utf-8"></head><body translate="no"><div id="__next" translate="no"><header><button id="home">Home</button><button>Sign In</button><button id="tutorial">Tutorial</button><button id="video">Video</button></header><main translate="no">
 <nav><a href="/audio/voices-cloning">Voice Clone</a><a href="/audio/voice-design">Voice Design</a></nav>
 <h1 id="title">Text to Speech</h1><button id="generate">Generate</button><p id="count">1,250 / 3,000 characters</p><p id="slots">Voice slots remaining: 2/10</p>
 <form><label for="prompt">Prompt</label><textarea id="prompt" placeholder="Enter your prompt">Generate Music</textarea><input id="song" placeholder="Song Name (Optional)" value="Home"><input id="secret" type="password" value="Secret password"><input id="file" type="file"><input id="agree" type="checkbox" value="agreed"><label for="agree"><span>I have read and agree to the </span><a id="terms" href="/audio/doc/terms-of-service.html">Term of Service</a><span> and </span><a href="/audio/doc/privacy.html">Privacy Policy</a></label></form>
@@ -9,9 +9,9 @@ const fixture=`<!doctype html><meta charset="utf-8"><header><button id="home">Ho
 <select id="language"><option id="implicit">English</option><option id="explicit" value="ja">Japanese</option></select>
 <p id="inline">I have read and agree to the <a id="inline-terms" href="/audio/doc/terms.html">Term of Service</a> and <a href="/audio/doc/privacy.html">Privacy Policy</a></p><p id="split"><span>Generated voice </span><span>results will appear here</span></p><p id="instruction">Clone a voice using as little as a 10-second clean voice clip.</p>
 <p id="drop">Add or drop an audio or video file, up to 500MB and 300 seconds.</p><p id="error">Request failed with status code 501</p>
-<input id="range" type="range" min="0.5" max="2" step="0.1" value="1.2"><span id="rate">1.2x</span><pre id="code">Generate</pre><p translate="no" id="no">Music</p></main><script>
+<input id="range" type="range" min="0.5" max="2" step="0.1" value="1.2"><span id="rate">1.2x</span><pre id="code">Generate</pre><p translate="no" id="no">Music</p><div class="prompt-content" translate="no"><p>Home</p></div></main></div><script>
 window.__frames=[];requestAnimationFrame(function sample(){const el=document.querySelector('#title');if(el)__frames.push({text:el.textContent,visible:getComputedStyle(el).visibility!=='hidden'});if(__frames.length<4)requestAnimationFrame(sample);});
-</script>`;
+</script></body></html>`;
 (async()=>{
 const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']});
 try{
@@ -21,6 +21,7 @@ await page.goto('https://www.minimax.io/audio/text-to-speech');const host=page.l
 const text=id=>page.locator('#'+id).textContent();const waitText=(id,value)=>page.waitForFunction(([id,value])=>document.getElementById(id).textContent===value,[id,value]);
 await waitText('title','文本转语音');await page.waitForFunction(()=>__frames.length>=4);assert.equal(await page.evaluate(()=>__frames.filter(f=>f.visible&&f.text==='Text to Speech').length),0);
 assert.equal(await text('inline'),'我已阅读并同意服务条款和隐私政策');assert.equal(await page.locator('#inline-terms').getAttribute('href'),'/audio/doc/terms.html');assert.equal(await text('split'),'生成的音色结果将显示在这里');assert.equal(await text('home'),'首页');assert.equal(await text('count'),'1,250 / 3,000 个字符');assert.equal(await text('slots'),'剩余音色名额：2/10');
+assert.equal(await text('tutorial'),'教程');assert.equal(await text('video'),'视频');assert.equal(await page.locator('html').getAttribute('translate'),'no');assert.equal(await page.locator('body').getAttribute('translate'),'no');
 assert.equal(await page.locator('#prompt').inputValue(),'Generate Music');assert.equal(await page.locator('#prompt').getAttribute('placeholder'),'输入提示词');assert.equal(await page.locator('#song').inputValue(),'Home');assert.equal(await page.locator('#song').getAttribute('placeholder'),'歌曲名称（可选）');
 assert.equal(await text('editor'),'HomeHappy');assert.equal(await text('rich'),'Generate');assert.equal(await text('output'),'Happy');assert.equal(await text('voice'),'Calm');assert.equal(await text('filename'),'Generate');assert.equal(await text('model'),'speech-2.8-hd');assert.equal(await text('code'),'Generate');assert.equal(await text('no'),'Music');
 assert.equal(await page.locator('#implicit').getAttribute('label'),'英语');assert.equal(await page.locator('#implicit').textContent(),'English');assert.equal(await page.locator('#implicit').getAttribute('value'),null);assert.equal(await page.locator('#language').inputValue(),'English');assert.equal(await page.locator('#explicit').getAttribute('label'),'日语');assert.equal(await page.locator('#explicit').getAttribute('value'),'ja');

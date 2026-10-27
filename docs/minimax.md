@@ -1,12 +1,16 @@
 # MiniMax Audio 翻译
 
-现已包含在“网站翻译”脚本中。[网站翻译 · v1.1.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.0.zip)
+现已包含在“网站翻译”脚本中。[网站翻译 · v1.1.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.1.zip)
 
 安装方法与其他网站相同，只需导入一个 `websites-zh-CN.user.js`。已安装网站翻译的用户可在篡改猴检查更新，更新后刷新 MiniMax 页面。无需再安装独立脚本。
 
 ## 适用范围
 
 支持 [MiniMax Audio](https://www.minimax.io/audio) 的首页及音频子页面，包括文本转语音、音乐生成、音色库、音色设计、声音克隆和人声分离。支持 `minimax.io` 与 `www.minimax.io`；仅作用于 `/audio` 和 `/audio/…`，不翻译 MiniMax 其他产品、开发者平台或第三方页面。
+
+## v1.1.1 修复
+
+旧版会把根节点的 `translate="no"` 标记当作整页跳过条件，导致助手出现而界面保持英文。本版区分页面布局和局部内容区域：根节点标记不阻止脚本，局部原文标记与输入/生成内容保护继续生效。并补充首页教程、视频及示例场景文字。
 
 ## 翻译与保护
 
