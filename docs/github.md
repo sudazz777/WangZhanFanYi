@@ -4,9 +4,9 @@ GitHub 常用界面的简体中文翻译脚本，适用于桌面版 Chrome、Edg
 
 ## 下载与安装
 
-### [网站翻译 · v1.0.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.0.1.zip)
+### [网站翻译 · v1.1.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.0.zip)
 
-压缩包包含一个 `websites-zh-CN.user.js`、安装说明与 `GPL-3.0.txt`，同时支持 Artlist、Musicbed 和 GitHub。
+压缩包包含一个 `websites-zh-CN.user.js`、安装说明与 `GPL-3.0.txt`，支持 Artlist、Musicbed、GitHub 和 MiniMax Audio。
 
 1. 安装 [Tampermonkey（篡改猴）](https://www.tampermonkey.net/)。
 2. 下载 ZIP 并解压，在篡改猴 **管理面板 → 实用工具 → 从文件导入** 中选择 `.user.js` 文件。

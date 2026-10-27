@@ -7,7 +7,7 @@ const root = path.join(__dirname, '..');
 (async () => {
   const browser = await chromium.launch({headless:true, executablePath:'/usr/bin/chromium', args:['--no-sandbox']});
   try {
-    for (const site of ['artlist','musicbed','github']) {
+    for (const site of process.argv.includes('--bundle')?['artlist','musicbed','github','minimax']:['artlist','musicbed','github']) {
       const bundled = process.argv.includes('--bundle');
       const script = fs.readFileSync(path.join(root, (bundled?'websites':site)+'-zh-CN.user.js'), 'utf8');
       const meta = fs.readFileSync(path.join(root, 'updates', (bundled?'websites':site)+'.meta.js'), 'utf8');
@@ -21,7 +21,7 @@ const root = path.join(__dirname, '..');
       const errors = [];
       page.on('pageerror', e => errors.push(e.message));
       await page.route('**/*', route => route.fulfill({contentType:'text/html',body:'<html><body><button>Settings</button><input value="private input"><p>Private page contents</p></body></html>'}));
-      await page.goto(site==='github'?'https://github.com/example/repo/settings':site==='artlist'?'https://artlist.io/royalty-free-music':'https://www.musicbed.com/');
+      await page.goto(site==='github'?'https://github.com/example/repo/settings':site==='artlist'?'https://artlist.io/royalty-free-music':site==='minimax'?'https://www.minimax.io/audio':'https://www.musicbed.com/');
       await page.evaluate(() => {
         window.__menus = []; window.__calls = []; window.__store = {};
         window.GM_getValue = (k,d) => __store[k] ?? d;

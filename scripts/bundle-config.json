@@ -1,12 +1,13 @@
 {
   "name": "网站翻译",
   "namespace": "wangzhanfanyi-zh-cn",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "id": "websites",
   "filename": "websites-zh-CN.user.js",
   "sites": [
     {"id": "artlist", "name": "Artlist", "hosts": ["artlist.io", "www.artlist.io"]},
     {"id": "musicbed", "name": "Musicbed", "hosts": ["musicbed.com", "www.musicbed.com"]},
-    {"id": "github", "name": "GitHub", "hosts": ["github.com"]}
+    {"id": "github", "name": "GitHub", "hosts": ["github.com"]},
+    {"id": "minimax", "name": "MiniMax Audio", "hosts": ["minimax.io", "www.minimax.io"], "pathPrefix": "/audio", "module": "scripts/sites/minimax.js"}
   ]
 }

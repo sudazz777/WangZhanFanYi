@@ -11,8 +11,8 @@
 先同步更新 README、下载页面和安装说明中的统一版本，以及 README 与首页的支持网站列表，再运行 `python scripts/package-bundle.py`。发布包命名为 `downloads/websites-translation-v<版本>.zip`，只包含一个用户脚本、`安装说明.txt` 与 `GPL-3.0.txt`。需要验证：
 
 - `node test/bundle.test.cjs` 与 `node test/update.test.cjs --bundle`。
-- 三站原有功能测试均支持传入 `websites-zh-CN.user.js`；音乐站绘制测试通过 `--musicbed` 选择 Musicbed。
-- 三站防闪现回归及性能测试；性能测试可使用 `--github`、`--musicbed` 选择网站。
+- 既有网站功能测试均支持传入 `websites-zh-CN.user.js`；音乐站绘制测试通过 `--musicbed` 选择 Musicbed。
+- 各站防闪现回归及性能测试；性能测试可使用 `--github`、`--musicbed` 选择网站。
 - ZIP 中脚本与根目录逐字节一致，公开版本文件、脚本和 ZIP 均可读取。
 
 旧独立版保留用于兼容与维护词库。安装合并版前应停用独立版；篡改猴按脚本隔离存储，因此旧设置与缓存不会自动转移。
@@ -32,3 +32,9 @@
 新版本比较使用数字段，例如 `1.10.0` 大于 `1.9.9`。手动检查验证名称、命名空间与版本格式，忽略远程元数据的下载链接，按本地固定的仓库地址构造 ZIP 链接。网络或校验失败会显示错误，不会误报“已是最新版本”。
 
 旧版没有更新配置，用户需要先手动导入一次带有本功能的新版。篡改猴的检查周期、更新权限和安装确认由用户的扩展设置控制。
+
+## 新增站点适配器
+
+新适配器可放在 `scripts/sites/<网站>.js`，在 `scripts/bundle-config.json` 中配置 `module`、`hosts` 与可选的 `pathPrefix`。构建脚本生成元数据和域名/路径分派，适配器直接调用唯一的 `createRenderCore` 与 `createScriptUpdater`，不需要复制历史独立脚本。MiniMax 使用此方式接入，仅在 Audio 区域生效。
+
+新增站点需验证动态弹窗、框架节点复用、表单和编辑内容保护、原生选项的隐式值、站内路由以及离开作用范围的恢复。MiniMax 功能检查为 `node test/minimax.test.cjs`，性能检查为 `node test/performance.test.cjs websites-zh-CN.user.js --minimax`。

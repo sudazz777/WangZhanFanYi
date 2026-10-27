@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="一个脚本支持 Artlist、Musicbed 和 GitHub 中文翻译；查看支持网站，下载统一 ZIP 安装包。">
+  <meta name="description" content="一个脚本支持 Artlist、Musicbed、GitHub 和 MiniMax Audio 中文翻译；查看支持网站，下载统一 ZIP 安装包。">
   <meta name="color-scheme" content="light">
   <title>网站翻译 · 下载目录</title>
   <style>
@@ -23,11 +23,11 @@
   <style>
     .hero{display:grid;max-width:none;grid-template-columns:1.15fr 1fr;gap:65px;padding:65px 0 48px}.intro{max-width:535px}
     .section-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.section-head p{margin:0;color:var(--muted);font-size:12px}
-    .catalog{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:22px}.site-card{max-width:548px}.site-icon{display:grid;place-items:center;width:45px;height:45px;border-radius:12px;background:var(--pale);color:var(--green);font:700 23px Georgia,serif}
+    .catalog{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.site-card{max-width:none}.site-icon{display:grid;place-items:center;width:45px;height:45px;border-radius:12px;background:var(--pale);color:var(--green);font:700 23px Georgia,serif}
     h3{font-size:25px;line-height:1.35;margin:0}.domain{font:12px ui-monospace,monospace;color:var(--muted);margin:5px 0 14px}.description{font-size:14px;color:var(--muted);margin:0 0 18px}.site-card .tags{margin:0 0 23px}.card-bottom{display:flex;justify-content:space-between;gap:12px;margin-top:14px;font-size:12px;color:var(--muted)}.card-bottom a{color:var(--green)}
     .site-card{display:flex;flex-direction:column}.site-card .button{margin-top:auto}
     .guide{margin-top:55px;border-top:1px solid var(--line);border-bottom:none;padding:50px 0 35px}
-    @media(max-width:700px){.hero{grid-template-columns:1fr;gap:28px;padding:42px 0}.section-head{align-items:flex-start;flex-direction:column;gap:5px}.card-bottom{flex-wrap:wrap}.guide{margin-top:38px;padding:35px 0 20px}}
+    @media(max-width:700px){.catalog{grid-template-columns:1fr}.hero{grid-template-columns:1fr;gap:28px;padding:42px 0}.section-head{align-items:flex-start;flex-direction:column;gap:5px}.card-bottom{flex-wrap:wrap}.guide{margin-top:38px;padding:35px 0 20px}}
   </style>
 </head>
 <body>
@@ -38,13 +38,13 @@
     </header>
     <main>
       <section class="hero" aria-labelledby="hero-title">
-        <div><div class="eyebrow"><span class="dot" aria-hidden="true"></span>一个脚本，三个网站</div>
+        <div><div class="eyebrow"><span class="dot" aria-hidden="true"></span>常用网站，自动识别</div>
         <h1 id="hero-title">让常用网站，<br><span>说中文。</span></h1>
-        <p class="intro">Artlist、Musicbed 和 GitHub，装一次就能用。翻译按网站分别适配，防闪现共用一套优化。</p></div>
+        <p class="intro">Artlist、Musicbed、GitHub 和 MiniMax Audio，装一次就能用。翻译按网站分别适配，防闪现共用一套优化。</p></div>
         <div class="download-card" id="download">
-          <div class="card-top"><span class="file-icon" aria-hidden="true">ZIP</span><span class="version">v1.0.1</span></div>
-          <h2>网站翻译</h2><p class="file-name">websites-translation-v1.0.1.zip</p>
-          <a class="button primary" href="./downloads/websites-translation-v1.0.1.zip" download="websites-translation-v1.0.1.zip">网站翻译 · v1.0.1</a>
+          <div class="card-top"><span class="file-icon" aria-hidden="true">ZIP</span><span class="version">v1.1.0</span></div>
+          <h2>网站翻译</h2><p class="file-name">websites-translation-v1.1.0.zip</p>
+          <a class="button primary" href="./downloads/websites-translation-v1.1.0.zip" download="websites-translation-v1.1.0.zip">网站翻译 · v1.1.0</a>
           <p class="download-note">内含一个脚本、安装说明与许可证。已安装独立版？先停用原来的三个翻译脚本，再导入合并版。<a href="./docs/使用说明.md">查看安装说明</a>。</p>
         </div>
       </section>
@@ -78,10 +78,19 @@
             <a class="button secondary" href="./github.html">查看 GitHub 翻译说明 →</a>
             <div class="card-bottom"><span>合并版自动识别</span><a href="https://github.com/" target="_blank" rel="noopener noreferrer">打开 GitHub ↗</a></div>
           </article>
+          <article class="download-card site-card" aria-labelledby="minimax-title">
+            <div class="card-top"><span class="site-icon" aria-hidden="true">M</span><span class="version">已支持</span></div>
+            <h3 id="minimax-title">MiniMax Audio 翻译</h3>
+            <p class="domain">minimax.io/audio</p>
+            <p class="description">翻译语音与音乐生成、音色库、声音克隆和人声分离界面，包含菜单与说明；歌词、提示词及提交值保持原文。</p>
+            <div class="tags" aria-label="MiniMax Audio 翻译功能"><span class="tag">语音与音乐</span><span class="tag">本地界面翻译</span><span class="tag">保护编辑内容</span></div>
+            <a class="button secondary" href="./minimax.html">查看 MiniMax Audio 翻译说明 →</a>
+            <div class="card-bottom"><span>仅作用于 Audio 区域</span><a href="https://www.minimax.io/audio" target="_blank" rel="noopener noreferrer">打开 MiniMax Audio ↗</a></div>
+          </article>
         </div>
       </section>
       <section class="guide" id="install" aria-labelledby="install-title">
-        <div><h2 id="install-title">装一次，三个网站都能用。</h2><p class="guide-intro">适用于桌面版 Chrome、Edge 和 Firefox。</p></div>
+        <div><h2 id="install-title">装一次，支持的网站都能用。</h2><p class="guide-intro">适用于桌面版 Chrome、Edge 和 Firefox。</p></div>
         <ol class="steps">
           <li><div><strong>安装篡改猴</strong><p>访问 <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener noreferrer">Tampermonkey 官网</a>，为你的浏览器安装扩展。</p></div></li>
           <li><div><strong>下载、解压并导入</strong><p>先停用旧的三个独立脚本。下载合并版 ZIP，在篡改猴“管理面板 → 实用工具 → 从文件导入”中选择解压得到的 websites-zh-CN.user.js 文件。</p></div></li>

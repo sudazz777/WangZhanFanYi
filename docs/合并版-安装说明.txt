@@ -1,9 +1,10 @@
-网站翻译 v1.0.1
+网站翻译 v1.1.0
 
 支持的网站
 Artlist：https://artlist.io/ 及 https://www.artlist.io/
 Musicbed：https://musicbed.com/ 及 https://www.musicbed.com/
 GitHub：https://github.com/
+MiniMax Audio：https://www.minimax.io/audio 及音频子页面（支持无 www 域名）。
 
 安装
 1. 安装并启用 Tampermonkey（篡改猴）：https://www.tampermonkey.net/
@@ -12,6 +13,8 @@ GitHub：https://github.com/
 4. 确认安装后刷新网站，只需启用这一个脚本。
 
 本版更新
+新增 MiniMax Audio：语音、音乐、音色库、音色设计、克隆和人声分离的菜单与说明。
+界面本地翻译，不发送歌词、提示词或编辑内容，保留提交值。
 移除助手内“翻译选中文字”和“打开仓库下载目录”入口。
 发现新版后可点击“在线更新（篡改猴确认）”，直接打开安装确认页。
 
