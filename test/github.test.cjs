@@ -2,7 +2,7 @@ const { chromium } = require('playwright');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const script = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'github-zh-CN.user.js'), 'utf8');
+const script = fs.readFileSync(process.argv[2] || path.join(__dirname, '..', 'websites-zh-CN.user.js'), 'utf8');
 const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
   <a data-tab-item="code" href="/Code/Settings">Code</a><a href="/Code/Settings/issues">Issues</a><a href="/Code/Settings/pulls">Pull requests</a>
   <a href="/Code/Settings/actions">Actions</a><a href="/Code/Settings/settings">Settings</a></nav>
@@ -59,7 +59,7 @@ const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
     await page.route('https://github.com/**', route => route.fulfill({contentType:'text/html',body:fixture}));
     await page.goto('https://github.com/Code/Settings');
     await page.evaluate(() => {
-      window.__store = {}; window.__requests = []; window.__menus = []; window.__delay = 20; window.__fail = false; window.__clicks = 0;
+      window.__store = {}; window.__messages=[];window.alert=message=>__messages.push(message); window.__requests = []; window.__menus = []; window.__delay = 20; window.__fail = false; window.__clicks = 0;
       window.GM_getValue = (k, d) => __store[k] ?? d;
       window.GM_setValue = (k, v) => { __store[k] = v; };
       window.GM_registerMenuCommand = (name, action) => __menus.push({name, action});
@@ -115,19 +115,18 @@ const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
     await page.waitForFunction(labels => [...document.querySelectorAll('#popup button')].every((el,i) => el.textContent === labels[i][1] && el.getAttribute('aria-label') === labels[i][1]),labels);
     await page.evaluate(() => document.querySelector('#popup button').firstChild.nodeValue='Copy link');
     await page.waitForFunction(() => document.querySelector('#popup button').textContent==='复制链接');
-    const host = page.locator('[data-github-zh]');
-    await page.evaluate(() => document.querySelector('[data-github-zh]').shadowRoot.querySelector('details').open=true);
-    await host.getByRole('button',{name:'显示英文原文',exact:true}).click();
+    const toggle=()=>page.evaluate(()=>__menus.find(m=>m.name==='中文 / 英文界面切换').action());
+    await toggle();
     assert.equal(await page.locator('#code-menu').textContent(),'Code');
     assert.equal(await page.locator('#search').getAttribute('placeholder'),'Search or jump to...');
     assert.equal(await page.locator('#search-hint').textContent(),'Type / to search');
     assert.equal(await page.locator('#settings-general').textContent(),'General');
-    await host.getByRole('button',{name:'恢复中文界面',exact:true}).click();
+    await toggle();
     await page.waitForFunction(() => document.querySelector('#code-menu').textContent==='代码');
     console.log('PASS: 动态弹窗、节点复用、计数标签、原文恢复与重新启用');
 
     async function select(id) { await page.evaluate(id => { const range=document.createRange();range.selectNodeContents(document.getElementById(id));const selection=getSelection();selection.removeAllRanges();selection.addRange(range); }, id); }
-    const result = () => host.locator('#result').textContent();
+    const result = () => page.evaluate(()=>window.__messages.at(-1)||'');
     const translateSelected = () => page.evaluate(() => { __menus.find(m=>m.name==='翻译选中文字（在线）').action(); });
     await select('source'); await translateSelected();
     assert((await result()).includes('代码区')); assert.equal(await page.evaluate(() => __requests.length),0);
@@ -142,15 +141,15 @@ const fixture = `<!doctype html><meta charset="utf-8"><header><nav>
     accept = false; await select('prose'); await translateSelected();
     assert.equal(await page.evaluate(() => __requests.length),0);
     accept = true; await select('prose'); await translateSelected();
-    await page.waitForFunction(() => document.querySelector('[data-github-zh]').shadowRoot.getElementById('result').textContent === '合并此拉取请求前，请审查更改。');
+    await page.waitForFunction(()=>__messages.at(-1)?.includes('合并此拉取请求前，请审查更改。'));
     assert.equal(await page.locator('#prose').textContent(),'Review the changes before merging this pull request.');
     assert.deepEqual(await page.evaluate(() => __requests),[{text:'Review the changes before merging this pull request.',anonymous:true}]);
     assert(!JSON.stringify(await page.evaluate(() => __store)).includes('Review the changes'));
-    await host.getByRole('button',{name:'清空翻译结果',exact:true}).click(); assert.equal(await result(),'');
+    await page.evaluate(()=>{__menus.find(m=>m.name==='取消选中文字翻译').action();__messages.length=0;}); assert.equal(await result(),'');
     await page.evaluate(() => { __delay=250; }); await select('prose'); await translateSelected();
-    await host.getByRole('button',{name:'清空翻译结果',exact:true}).click(); await page.waitForTimeout(350); assert.equal(await result(),'');
+    await page.evaluate(()=>{__menus.find(m=>m.name==='取消选中文字翻译').action();__messages.length=0;}); await page.waitForTimeout(350); assert.equal(await result(),'');
     await page.evaluate(() => { __delay=20;__fail=true; }); await select('prose'); await translateSelected();
-    await page.waitForFunction(() => document.querySelector('[data-github-zh]').shadowRoot.getElementById('result').textContent.includes('在线翻译失败'));
+    await page.waitForFunction(()=>__messages.at(-1)?.includes('在线翻译失败'));
     assert.equal(await page.locator('#code-menu').textContent(),'代码');
     console.log('PASS: 只在选中并确认后在线翻译、拒绝代码区、结果不改写正文/不缓存、取消确认/清空在途结果和网络失败处理');
     await page.evaluate(() => {

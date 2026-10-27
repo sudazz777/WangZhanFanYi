@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         网站翻译
 // @namespace    wangzhanfanyi-zh-cn
-// @version      1.1.1
+// @version      1.2.0
 // @description  翻译 Artlist、Musicbed、GitHub、MiniMax Audio，自动识别网站，支持检查更新。
 // @match        https://artlist.io/*
 // @match        https://www.artlist.io/*
@@ -18,6 +18,7 @@
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
 // @grant        GM_xmlhttpRequest
+// @grant        GM_openInTab
 // @connect      translate.googleapis.com
 // @connect      raw.githubusercontent.com
 // @license      GPL-3.0-or-later

@@ -2,7 +2,7 @@
 
 ## 合并版发布
 
-合并版更新界面维护在 `scripts/bundle-update-module.js`。发现新版本后只展示本仓库固定地址的 `.user.js` 在线更新链接，由篡改猴打开安装确认页；不下载执行脚本、不自动替换自身，助手不提供 ZIP 下载入口，仓库下载页仍提供首次安装包。
+合并版菜单更新命令维护在 `scripts/bundle-update-module.js`。从篡改猴菜单检查更新后，发现新版以浏览器确认框询问是否打开安装页，确认后通过 GM_openInTab 打开固定仓库的 .user.js 地址；不向网页注入助手、对话框、隐藏面板或浮层。
 
 当前主下载为“网站翻译”合并版，统一版本记录在 `scripts/bundle-config.json`。修改版本后运行 `python scripts/sync-update-metadata.py`，再运行 `python scripts/build-bundle.py`，生成 `websites-zh-CN.user.js` 与 `updates/websites.meta.js`。
 

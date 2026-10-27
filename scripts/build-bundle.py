@@ -20,7 +20,7 @@ for site in release['sites']:
     fields.extend(('match', f'https://{host}{site.get("pathPrefix", "/")}*') for host in site['hosts'])
 fields += [('updateURL', config['metaUrl']), ('downloadURL', f"{raw}/{release['filename']}"),
            ('run-at', 'document-start'), ('noframes', ''),
-           *[('grant', grant) for grant in ['GM_getValue', 'GM_setValue', 'GM_registerMenuCommand', 'GM_xmlhttpRequest']],
+           *[('grant', grant) for grant in ['GM_getValue', 'GM_setValue', 'GM_registerMenuCommand', 'GM_xmlhttpRequest', 'GM_openInTab']],
            ('connect', 'translate.googleapis.com'), ('connect', 'raw.githubusercontent.com'),
            ('license', 'GPL-3.0-or-later')]
 header = '// ==UserScript==\n' + '\n'.join('// @'+key.ljust(13)+value for key, value in fields) + '\n// ==/UserScript=='
@@ -70,19 +70,26 @@ for site in release['sites']:
     assert not re.search(r'\b(scanTimer|scanQueued|scanGeneration|pendingMasks|maskableRoots|revealStyle|MASK_LIMIT|attributeJobs|roots)\b', body), site['id']
     module = '  // BEGIN SCRIPT UPDATE MODULE\n'+updater+'\n  // END SCRIPT UPDATE MODULE'
     assert body.count(module) == 1, site['id']
-    body = body.replace(module, '  const {mountScriptUpdate, checkScriptUpdate} = createScriptUpdater(() => host);', 1)
+    body = body.replace(module, '  const {checkScriptUpdate} = createScriptUpdater();', 1)
+    # No panel, hidden panel, or periodic remounting in the bundled product.
+    start,end=body.index('  function panel()'),body.index('  function start()')
+    body=body[:start]+body[end:]
+    start=body.index('  function refreshUI()')
+    end=body.index('\n  }',start)+len('\n  }')
+    body=body[:start]+'  function refreshUI() {}\n'+body[end:]
+    mounting=("      if (document.body && document.readyState !== 'loading') {\n"
+              "        if (!host) panel();\n        else if (!host.isConnected) document.body.append(host);\n      }\n")
+    assert body.count(mounting)==1,site['id']
+    body=body.replace(mounting,'',1).replace('  let host;\n','').replace('  let ui;\n','')
     if site['id'] == 'github':
-        # Selection translation is still available from Tampermonkey's menu.
-        for old, new in [
-            ('    ui.selection.disabled = busy;\n', ''),
-            ("    ui.selection.textContent = busy ? '正在翻译所选文字…' : '翻译选中文字（在线）';\n", ''),
-            ('<button id="selection"></button>', ''),
-            ("'rescan', 'selection', 'clear'", "'rescan', 'clear'"),
-            ('    ui.selection.onclick = translateSelection;\n', ''),
-        ]:
-            assert body.count(old) == 1, old
-            body = body.replace(old, new, 1)
-    body = body.replace(f"中 / EN · {site['name']} 翻译", f"中 / EN · 网站翻译（{site['name']}）")
+        start,end=body.index('  async function translateSelection()'),body.index('  const {checkScriptUpdate}')
+        body=body[:start]+(root/'scripts/github-selection-command.js').read_text()+body[end:]
+        body=body.replace("      GM_registerMenuCommand('翻译选中文字（在线）', translateSelection);", "      GM_registerMenuCommand('翻译选中文字（在线）', translateSelection);\n      GM_registerMenuCommand('取消选中文字翻译', () => { requestId++; busy=false; });")
+    else:
+        insertion=("      GM_registerMenuCommand('歌曲名中英双语切换', () => change({bilingual:!settings.bilingual}));\n"
+                   "      GM_registerMenuCommand('清空在线翻译缓存', () => {resetWork();clearTimeout(saveTimer);cache=Object.create(null);write(KEY+'-cache',{});restore();schedule(document.body,true);});\n")
+        body=body.replace("      GM_registerMenuCommand('检查脚本更新', checkScriptUpdate);",insertion+"      GM_registerMenuCommand('检查脚本更新', checkScriptUpdate);",1)
+    assert 'ui.' not in body and 'attachShadow' not in body and 'document.body.append(host)' not in body,site['id']
     parts.append(f"  if ({condition}) {{\n{body}\n    return;\n  }}")
 parts.append('})();\n')
 (root / release['filename']).write_text('\n'.join(parts))

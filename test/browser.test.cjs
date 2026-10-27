@@ -56,7 +56,11 @@ const fixture = `<!doctype html><html><body>
     await page.addScriptTag({ content: script });
     const text = id => page.locator('#' + id).textContent();
     const waitText = (id, value) => page.waitForFunction(([i, v]) => document.getElementById(i).textContent === v, [id, value]);
-    const click = id => page.evaluate(id => document.querySelector('[data-artlist-zh]').shadowRoot.getElementById(id).click(), id);
+    const click = id => page.evaluate(id => {
+      const panel=document.querySelector('[data-artlist-zh]');if(panel){panel.shadowRoot.getElementById(id).click();return;}
+      const names={toggle:'中文 / 英文切换',online:'开启 / 关闭歌曲名在线翻译',bilingual:'歌曲名中英双语切换',rescan:'重新扫描 / 重试未译内容',clear:'清空在线翻译缓存'};
+      __menus.find(m=>m.name===names[id]).fn();
+    }, id);
     await waitText('filter', '筛选');
     assert.equal(await text('genre'), '电影配乐');
     assert.equal(await text('login'), '登录');
@@ -215,7 +219,7 @@ const fixture = `<!doctype html><html><body>
       }
     });
     await click('toggle');
-    await page.waitForFunction(() => document.querySelector('[data-artlist-zh]').shadowRoot.getElementById('status').textContent.includes('在线连接失败'));
+    if(await page.locator('[data-artlist-zh]').count()) { await page.waitForFunction(() => document.querySelector('[data-artlist-zh]').shadowRoot.getElementById('status').textContent.includes('在线连接失败')); } else { await page.waitForTimeout(1800); }
     assert.equal(await text('filter'), '筛选');
     const before = await page.evaluate(() => __requests.length);
     await page.waitForTimeout(1600);

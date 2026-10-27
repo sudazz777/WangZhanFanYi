@@ -8,15 +8,19 @@
   const NO_TRANSLATE = '[translate="no" i]:not(html,body,main,#root,#__next,#app,[data-reactroot])';
   const SKIP = 'script,style,noscript,code,pre,kbd,svg,canvas,iframe,textarea,input,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],.ProseMirror,.tiptap,.cm-editor,.monaco-editor,[data-slate-editor],[data-lexical-editor],'+NO_TRANSLATE+',[data-private],[data-sensitive],[data-minimax-zh]';
   // Attributes such as placeholder can be translated without touching editable text or values.
-  const ATTR_SKIP = 'script,style,noscript,svg,canvas,iframe,code,pre,'+NO_TRANSLATE+',[data-private],[data-sensitive],[data-minimax-zh]';
+  const BASE_SKIP = 'script,style,noscript,svg,canvas,iframe,code,pre,[data-private],[data-sensitive],[data-minimax-zh]';
+  const ATTR_SKIP = BASE_SKIP+','+NO_TRANSLATE;
   const CONTENT = '[data-user-content],[data-generated-content],[data-voice-name],[data-song-name],[data-testid="voice-name"],[data-testid="work-title"],[data-testid="generated-text"],[data-testid="lyrics-content"],.voice-name,.song-name,.file-name,.filename,.generated-content,.generated-text,.lyrics-content,.prompt-content,.user-content';
   const INLINE_BLOCK = 'p,label,h1,h2,h3,[role="alert"],.ant-form-item-explain,.ant-form-item-extra';
+  const SOUND_MENU = '[role="listbox"],[role="menu"],[role="option"],[role="menuitem"],[data-sound-tag-menu],[cmdk-list],[data-lexical-typeahead-menu],.typeahead-popover,.lexical-typeahead-menu,.mention-suggestions';
+  const soundWords=new Map(Object.entries({laughs:'笑声',laugh:'笑声',chuckle:'轻笑',chuckles:'轻笑',coughs:'咳嗽',cough:'咳嗽','clear-throat':'清嗓',groans:'呻吟',groan:'呻吟',breath:'呼吸',pant:'喘气',pants:'喘气',inhale:'吸气',exhale:'呼气',gasps:'倒吸气',gasp:'倒吸气',sighs:'叹气',sigh:'叹气',sniffs:'吸鼻子',sniff:'吸鼻子',sobs:'抽泣',sob:'抽泣',cry:'哭泣',cries:'哭泣',scream:'尖叫',screams:'尖叫',humming:'哼唱',hum:'哼唱',snorts:'哼声',snort:'哼声',whimper:'呜咽',whimpers:'呜咽'}));
+  const soundLabels=new Map();let soundStyle;
   const originals = new Map();
   const localCache = new Map();
   let settings;
   try { settings = {enabled:true, ...GM_getValue(KEY+'-settings', {})}; }
   catch { settings = {enabled:true}; }
-  let host, ui, lastUrl = location.pathname + location.search, needsPrune = false;
+  let lastUrl = location.pathname + location.search, needsPrune = false;
   const isAudio = () => location.pathname === '/audio' || location.pathname.startsWith('/audio/');
   const enabled = () => settings.enabled && isAudio();
   const words = new Map();
@@ -117,6 +121,8 @@ Start Recording|开始录音
 Stop Recording|停止录音
 Stop|停止
 Pause|暂停
+Sound Tag|声音标签
+Sound Tags|声音标签
 Play|播放
 Preview|试听
 Download|下载
@@ -438,7 +444,8 @@ No results|暂无结果
     const ownLabel=previous && previous.output===label;
     const text=option.textContent;
     if(ownLabel && (previous.source!==null || previous.optionText===text)) return;
-    const zh=local(ownLabel?text:(label===null?text:label));
+    const source=ownLabel?text:(label===null?text:label);
+    const zh=local(source)||(soundUI(option)?soundWords.get(normalize(source)):null);
     // Keep native option text and implicit/explicit values intact; localize only its label.
     if(ownLabel) {
       previous.optionText=text;
@@ -502,6 +509,12 @@ No results|暂无结果
   function translate(node, attr=null) {
     if (!enabled()) return;
     const el=attr?node:node.parentElement;
+    if(!attr && decorateSoundTag(node))return;
+    if(!attr && el?.closest('button,[role="button"]') && !el.closest(CONTENT)) {
+      const value=node.nodeValue||'',key=normalize(value).replace(/^[^a-z]+/,'');
+      if(key==='sound tag' || key==='sound tags') {put(entryFor(node,null),'声音标签');return;}
+      if(key==='pause' && (el.closest('[role="toolbar"],[data-editor-toolbar],.editor-toolbar') || value.includes('<#>'))) {put(entryFor(node,null),'停顿');return;}
+    }
     if(!attr && el?.closest('option')) {translateOption(el.closest('option'));return;}
     if (!el || el.closest((attr?ATTR_SKIP:SKIP)+','+CONTENT)) return;
     if (attr==='label' && el.tagName!=='OPTION') return;
@@ -515,7 +528,8 @@ No results|暂无结果
   function* scan(root) {
     if(!enabled() || !root?.isConnected) return;
     if(root.nodeType===Node.TEXT_NODE) {translate(root);return;}
-    if(root.nodeType!==Node.ELEMENT_NODE || root.closest(ATTR_SKIP+','+CONTENT)) return;
+    if(root.nodeType!==Node.ELEMENT_NODE || root.closest(BASE_SKIP+','+CONTENT)) return;
+    if(root.closest(NO_TRANSLATE) && !soundUI(root) && !root.querySelector(SOUND_MENU))return;
     function attributes(el) {
       if(el.tagName==='OPTION') {translateOption(el);return;}
       for(const name of ATTRS) if(el.hasAttribute(name)) translate(el,name);
@@ -524,19 +538,55 @@ No results|暂无结果
     attributes(root); yield;
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT,{
       acceptNode(node) {
-        if(node.nodeType===Node.ELEMENT_NODE && node.matches(ATTR_SKIP+','+CONTENT)) return NodeFilter.FILTER_REJECT;
+        if(node.nodeType===Node.ELEMENT_NODE && node.matches(BASE_SKIP+','+CONTENT)) return NodeFilter.FILTER_REJECT;
+        if(node.nodeType===Node.ELEMENT_NODE && node.matches(NO_TRANSLATE) && !soundUI(node) && !node.querySelector(SOUND_MENU))return NodeFilter.FILTER_REJECT;
         // Editable subtrees are skipped, but their display attributes can still be translated.
-        if(node.parentElement?.closest(SKIP) && node.nodeType===Node.TEXT_NODE) return NodeFilter.FILTER_REJECT;
+        if(node.parentElement?.closest(SKIP) && node.nodeType===Node.TEXT_NODE && !soundUI(node.parentElement) && !node.parentElement.closest('button,[role="button"]')) return NodeFilter.FILTER_REJECT;
         return NodeFilter.FILTER_ACCEPT;
       }
     });
     let node;
     while((node=walker.nextNode())) {if(node.nodeType===Node.TEXT_NODE) translate(node);else attributes(node);yield;}
   }
-  const renderCore=createRenderCore({site:'minimax',enabled,skip:ATTR_SKIP+','+CONTENT,scan,translate});
+  function soundUI(el) {return el?.closest(SOUND_MENU) && !el.closest(CONTENT);}
+  function decorateSoundTag(node) {
+    const el=node.parentElement;
+    if(!el || !soundUI(el) || el.closest(BASE_SKIP+','+CONTENT) || el.closest('option'))return false;
+    const label=soundWords.get(normalize(node.nodeValue||''));
+    const existing=el.closest('[data-minimax-sound-label]');
+    if(existing) {
+      if(soundLabels.get(existing)?.node!==node)return false;
+      if(label) {existing.setAttribute('data-minimax-sound-label',label);return true;}
+      const state=soundLabels.get(existing);if(state)removeSoundLabel(existing,state);
+      soundLabels.delete(existing);return false;
+    }
+    if(!label)return false;
+    if(!soundStyle?.isConnected) {
+      soundStyle=document.createElement('style');soundStyle.setAttribute('data-minimax-sound-style','');
+      soundStyle.textContent='[data-minimax-sound-label]{font-size:0!important}[data-minimax-sound-label]::before{content:attr(data-minimax-sound-label);font-size:var(--minimax-sound-size,14px);line-height:normal;pointer-events:none}[data-minimax-sound-label]>*{font-size:var(--minimax-sound-size,14px)}';
+      (document.head||document.documentElement).append(soundStyle);
+    }
+    const size=getComputedStyle(el).fontSize;
+    const target=el;
+    soundLabels.set(target,{node,hadStyle:target.hasAttribute('style'),size:target.style.getPropertyValue('--minimax-sound-size'),priority:target.style.getPropertyPriority('--minimax-sound-size')});
+    target.style.setProperty('--minimax-sound-size',size);
+    target.setAttribute('data-minimax-sound-label',label);
+    return true;
+  }
+  function removeSoundLabel(el,state) {
+      el.removeAttribute('data-minimax-sound-label');
+      if(state.size)el.style.setProperty('--minimax-sound-size',state.size,state.priority);else el.style.removeProperty('--minimax-sound-size');
+      if(!state.hadStyle && !el.getAttribute('style'))el.removeAttribute('style');
+  }
+  function restoreSoundLabels() {
+    for(const [el,state] of soundLabels) removeSoundLabel(el,state);
+    soundLabels.clear();
+  }
+  const renderCore=createRenderCore({site:'minimax',enabled,skip:BASE_SKIP+','+CONTENT,scan,translate});
   const {schedule,scheduleAttribute,installRevealStyle}=renderCore;
-  const {mountScriptUpdate,checkScriptUpdate}=createScriptUpdater(()=>host);
+  const {checkScriptUpdate}=createScriptUpdater();
   function restore() {
+    restoreSoundLabels();
     for(const fields of originals.values()) for(const entry of fields.values()) {
       if(!entry.node.isConnected || current(entry)!==entry.output) continue;
       if(entry.attr && entry.source===null) entry.node.removeAttribute(entry.attr);
@@ -545,39 +595,18 @@ No results|暂无结果
     }
     originals.clear();
   }
-  function refreshUI() {
-    if(!ui)return;
-    ui.toggle.textContent=settings.enabled?'显示英文原文':'恢复中文翻译';
-    ui.status.textContent=settings.enabled?'本地界面翻译 · 输入与生成内容保留原文':'已显示英文原文 · 点击“恢复中文翻译”重新启用';
-  }
   function toggle() {
     renderCore.reset(); restore(); settings.enabled=!settings.enabled;
     try {GM_setValue(KEY+'-settings',settings);} catch { /* Keep this page usable without storage. */ }
-    refreshUI(); if(enabled()) schedule(document.body,true);
+    if(enabled()) schedule(document.body,true);
   }
-  function panel() {
-    host=document.createElement('div');host.setAttribute('data-minimax-zh','panel');
-    host.style.cssText='position:fixed;right:16px;bottom:24px;z-index:2147483647';
-    const shadow=host.attachShadow({mode:'open'});
-    shadow.innerHTML=`<style>:host{all:initial;font:13px/1.6 system-ui,"Microsoft YaHei",sans-serif;color:#f5f5f5}details{width:270px;max-height:75vh;overflow:auto;background:#202124;border:1px solid #62656b;border-radius:12px;box-shadow:0 4px 20px #0005}details:not([open]){width:auto}summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:600}.body{padding:0 12px 12px}button{display:block;width:100%;margin-top:7px;padding:7px;border:1px solid #6c7077;border-radius:6px;background:#303238;color:#fff;cursor:pointer;font:inherit;text-align:left}p{font-size:12px;color:#d1d5db;margin:4px 0}button:disabled{opacity:.6;cursor:wait}@media(max-width:480px){details{width:245px}}</style><details><summary>中 / EN · 网站翻译（MiniMax Audio）</summary><div class="body"><p>本地界面翻译 · 输入与生成内容保留原文</p><button id="toggle"></button><button id="rescan">重新扫描界面</button></div></details>`;
-    ui={toggle:shadow.getElementById('toggle'),status:shadow.querySelector('.body > p')};ui.toggle.onclick=toggle;
-    shadow.getElementById('rescan').onclick=()=>{renderCore.reset();schedule(document.body,true);};
-    mountScriptUpdate();document.body.append(host);refreshUI();
-  }
-  function mount() {
-    installRevealStyle();
-    if(document.body && document.readyState!=='loading') {
-      if(!host && isAudio()) panel();
-      else if(host && !host.isConnected) document.body.append(host);
-      if(host) host.hidden=!isAudio();
-    }
-  }
+  function mount() {installRevealStyle();}
   function navigation() {
     const next=location.pathname+location.search;
     if(next===lastUrl) return;
     const reentering=!/^\/audio(?:[/?]|$)/.test(lastUrl);
     lastUrl=next;
-    if(!isAudio()) {renderCore.reset();restore();if(host)host.hidden=true;return;}
+    if(!isAudio()) {renderCore.reset();restore();return;}
     mount();schedule(reentering?document.body:(document.querySelector('main,[role="main"]')||document.body),true);
   }
   mount();document.addEventListener('DOMContentLoaded',mount,{once:true});
@@ -601,6 +630,7 @@ No results|暂无结果
   document.addEventListener('turbo:load',navigation);document.addEventListener('pjax:end',navigation);
   setInterval(navigation,1500);
   function* prune() {
+    for(const el of soundLabels.keys())if(!el.isConnected)soundLabels.delete(el);
     for(const [node,fields] of originals) {
       if(!node.isConnected) {originals.delete(node);yield;continue;}
       for(const [key,entry] of fields) if(current(entry)!==entry.source && current(entry)!==entry.output) fields.delete(key);

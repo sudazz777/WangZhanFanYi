@@ -17,7 +17,7 @@ const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chro
 try{
 const context=await browser.newContext();const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await context.route('**/*',r=>r.fulfill({contentType:'text/html; charset=utf-8',body:fixture}));
 await page.context().addInitScript({content:`window.__requests=[];window.__menus=[];window.__store={};window.__clicks=0;window.GM_getValue=(k,d)=>__store[k]??d;window.GM_setValue=(k,v)=>__store[k]=v;window.GM_registerMenuCommand=(name,fn)=>__menus.push({name,fn});window.GM_xmlhttpRequest=o=>__requests.push(o);${script}`});
-await page.goto('https://www.minimax.io/audio/text-to-speech');const host=page.locator('[data-minimax-zh="panel"]');await host.waitFor({state:'attached'});
+await page.goto('https://www.minimax.io/audio/text-to-speech');const host=page.locator('[data-minimax-zh="panel"]');assert.equal(await host.count(),0);
 const text=id=>page.locator('#'+id).textContent();const waitText=(id,value)=>page.waitForFunction(([id,value])=>document.getElementById(id).textContent===value,[id,value]);
 await waitText('title','文本转语音');await page.waitForFunction(()=>__frames.length>=4);assert.equal(await page.evaluate(()=>__frames.filter(f=>f.visible&&f.text==='Text to Speech').length),0);
 assert.equal(await text('inline'),'我已阅读并同意服务条款和隐私政策');assert.equal(await page.locator('#inline-terms').getAttribute('href'),'/audio/doc/terms.html');assert.equal(await text('split'),'生成的音色结果将显示在这里');assert.equal(await text('home'),'首页');assert.equal(await text('count'),'1,250 / 3,000 个字符');assert.equal(await text('slots'),'剩余音色名额：2/10');
@@ -40,9 +40,25 @@ await page.evaluate(({route,title})=>{history.pushState({},'','/audio/'+route);d
 await page.evaluate(()=>{const d=document.createElement('div');d.id='modal';d.setAttribute('role','dialog');d.innerHTML='<h2>Advanced Settings (Optional)</h2><button>Remove Background Noise</button><p>Generated voice results will appear here</p>';document.body.append(d);});await page.waitForFunction(()=>document.querySelector('#modal h2').textContent==='高级设置（可选）');
 await page.evaluate(()=>document.querySelector('#modal h2').firstChild.nodeValue='Cookie Consent');await page.waitForFunction(()=>document.querySelector('#modal h2').textContent==='Cookie 使用同意');
 await page.evaluate(()=>document.querySelector('#song').setAttribute('placeholder','Search voices'));await page.waitForFunction(()=>document.querySelector('#song').placeholder==='搜索音色');
-// Leaving /audio restores the original page and hides the helper; returning resumes it.
-await page.evaluate(()=>{history.pushState({},'','/news');dispatchEvent(new PopStateEvent('popstate'));});assert.equal(await text('home'),'Home');assert.equal(await host.getAttribute('hidden'),'');
-await page.evaluate(()=>{history.pushState({},'','/audio');dispatchEvent(new PopStateEvent('popstate'));});await waitText('home','首页');assert.equal(await host.getAttribute('hidden'),null);assert.equal(await page.evaluate(()=>__requests.length),0);
+// Sound menus can be inside a protected editor. Localize their visible labels without changing tag text or node identities.
+await page.evaluate(()=>{
+ const root=document.createElement('div');root.contentEditable='true';root.setAttribute('translate','no');root.id='sound-editor';
+ root.innerHTML='<p id="sound-prose">laughs inhale</p><div contenteditable="false" role="listbox" class="typeahead-popover"><div role="option" id="sound-laugh" data-value="laughs"><span>laughs</span></div><div role="option" id="sound-inhale">inhale <button>+</button></div></div><div contenteditable="false" role="toolbar"><button id="pause-tag">Pause</button><button id="sound-tag">( ) Sound Tag</button></div>';
+ document.body.append(root);window.__soundText=document.querySelector('#sound-inhale').firstChild;
+ document.querySelector('#sound-laugh').onclick=e=>{window.__inserted='('+e.currentTarget.textContent.trim()+')';};
+});
+await page.waitForFunction(()=>document.querySelector('#sound-laugh span').getAttribute('data-minimax-sound-label')==='笑声');
+assert.equal(await page.locator('#sound-laugh').textContent(),'laughs');assert.equal(await page.locator('#sound-laugh').getAttribute('data-value'),'laughs');
+assert.equal(await page.locator('#sound-laugh span').evaluate(el=>getComputedStyle(el,'::before').content),'"笑声"');
+await page.locator('#sound-laugh').click();assert.equal(await page.evaluate(()=>__inserted),'(laughs)');
+assert.equal(await page.evaluate(()=>document.querySelector('#sound-inhale').firstChild===__soundText),true);assert.equal(await page.locator('#sound-inhale').getAttribute('data-minimax-sound-label'),'吸气');
+assert.equal(await text('sound-prose'),'laughs inhale');assert.equal(await text('pause-tag'),'停顿');assert.equal(await text('sound-tag'),'声音标签');
+await page.evaluate(()=>document.querySelector('#sound-laugh span').firstChild.nodeValue='coughs');await page.waitForFunction(()=>document.querySelector('#sound-laugh span').getAttribute('data-minimax-sound-label')==='咳嗽');
+await page.evaluate(()=>__menus.find(m=>m.name==='中文 / 英文界面切换').fn());assert.equal(await page.locator('[data-minimax-sound-label]').count(),0);assert.equal(await text('sound-tag'),'( ) Sound Tag');
+await page.evaluate(()=>__menus.find(m=>m.name==='中文 / 英文界面切换').fn());await page.waitForFunction(()=>document.querySelector('#sound-laugh span').getAttribute('data-minimax-sound-label')==='咳嗽');
+// Leaving /audio restores the original page ; returning resumes translation.
+await page.evaluate(()=>{history.pushState({},'','/news');dispatchEvent(new PopStateEvent('popstate'));});assert.equal(await text('home'),'Home');assert.equal(await host.count(),0);
+await page.evaluate(()=>{history.pushState({},'','/audio');dispatchEvent(new PopStateEvent('popstate'));});await waitText('home','首页');assert.equal(await host.count(),0);assert.equal(await page.evaluate(()=>__requests.length),0);
 for(const id of ['selection','update-download','update-repo'])assert.equal(await host.locator('#'+id).count(),0);
 assert.deepEqual(errors,[]);
 console.log('PASS: MiniMax initial frames, five routes, dialogs/descriptions, implicit option values, consent/actions, editable/generated content, restoration and no page-data requests');

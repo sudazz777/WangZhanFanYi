@@ -29,16 +29,11 @@ const script = fs.readFileSync(path.join(root,release.filename),'utf8');
       });
       await page.addScriptTag({content:script});
       if(site) {
-        await page.locator(`[data-${site.id}-zh="panel"]`).waitFor({state:'attached'});
-        assert.equal(await page.locator(`[data-${site.id}-zh] #update-repo`).count(),0);
-        assert.equal(await page.locator(`[data-${site.id}-zh] #update-download`).count(),0);
-        if(site.id==='github') assert.equal(await page.locator('[data-github-zh] #selection').count(),0);
         const keys=await page.evaluate(()=>__keys);
         assert(keys.length>0);
         assert(keys.every(k=>k.startsWith(site.id+'-zh-v1')),JSON.stringify(keys));
-        assert.equal(await page.locator(release.sites.map(s=>`[data-${s.id}-zh="panel"]`).join(',')).count(),1);
+        assert.equal(await page.locator(release.sites.map(s=>`[data-${s.id}-zh="panel"]`).join(',')).count(),0);
         assert.equal(await page.evaluate(()=>__menus.filter(m=>m.name==='检查脚本更新').length),1);
-        assert.match(await page.locator(`[data-${site.id}-zh] summary`).textContent(),new RegExp('网站翻译（'+site.name+'）'));
         await page.evaluate(()=>__menus.find(m=>m.name==='检查脚本更新').fn());
         assert.equal(await page.evaluate(()=>__requests.at(-1).url.split('?')[0]),'https://raw.githubusercontent.com/sudazz777/WangZhanFanYi/refs/heads/main/updates/websites.meta.js');
       } else {

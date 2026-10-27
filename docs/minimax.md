@@ -1,12 +1,16 @@
 # MiniMax Audio 翻译
 
-现已包含在“网站翻译”脚本中。[网站翻译 · v1.1.1](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.1.1.zip)
+现已包含在“网站翻译”脚本中。[网站翻译 · v1.2.0](https://github.com/sudazz777/WangZhanFanYi/raw/refs/heads/main/downloads/websites-translation-v1.2.0.zip)
 
 安装方法与其他网站相同，只需导入一个 `websites-zh-CN.user.js`。已安装网站翻译的用户可在篡改猴检查更新，更新后刷新 MiniMax 页面。无需再安装独立脚本。
 
 ## 适用范围
 
 支持 [MiniMax Audio](https://www.minimax.io/audio) 的首页及音频子页面，包括文本转语音、音乐生成、音色库、音色设计、声音克隆和人声分离。支持 `minimax.io` 与 `www.minimax.io`；仅作用于 `/audio` 和 `/audio/…`，不翻译 MiniMax 其他产品、开发者平台或第三方页面。
+
+## v1.2.0 更新
+
+移除页面助手，改用篡改猴扩展菜单。补充编辑器的声音标签菜单和 Pause / Sound Tag 按钮。声音标签通过显示层呈现中文，保留原始英文文本、选项值、节点和点击插入内容，不把声音指令改成中文后发送模型。
 
 ## v1.1.1 修复
 
@@ -26,7 +30,7 @@
 
 MiniMax 以独立站点适配模块接入共用的 `document-start` 启动、微任务扫描、分批预算和局部等待核心，不复制另一套防闪现逻辑。大块新增区域的局部等待最长 180 毫秒，关闭翻译、失败或离开 Audio 区域后会释放；不会隐藏整个页面。切换回 Audio 后自动恢复对应界面翻译。
 
-右下角“网站翻译（MiniMax Audio）”可切换中英文、重新扫描、检查更新；设置独立保存。发现新版时只提供“在线更新（篡改猴确认）”，不显示 ZIP 或仓库目录入口。
+页面不显示助手。通过篡改猴扩展菜单切换中英文、重新扫描和检查更新；设置独立保存。发现新版后确认打开安装页即可。
 
 ## 验证范围
 
